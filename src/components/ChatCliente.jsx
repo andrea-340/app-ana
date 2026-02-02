@@ -57,7 +57,7 @@ export default function ChatCliente() {
   return (
     <div style={{ height: '100dvh', display: 'flex', flexDirection: 'column', background: '#1a0033', fontFamily: 'sans-serif' }}>
       <div style={{ padding: '15px', background: '#2a004f', display: 'flex', justifyContent: 'space-between', color: '#ffd700', borderBottom: '1px solid #ffd700', alignItems: 'center' }}>
-        <span style={{ fontWeight: 'bold' }}>ASSISTENZA LIVE</span>
+        <span style={{ fontWeight: 'bold' }}>Chat live</span>
         <button onClick={logout} style={{ background: 'none', border: 'none', color: '#ffd700', fontSize: '24px', cursor: 'pointer', fontWeight: 'bold' }}>✕</button>
       </div>
       <div style={{ flex: 1, overflowY: 'auto', padding: '15px' }}>
