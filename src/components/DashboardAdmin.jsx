@@ -1,13 +1,12 @@
-import { useState, useEffect, useRef } from 'react';
-import { supabase } from '../lib/supabaseClient';
-
-export default function DashboardAdmin() {
+import { useState, useEffect, useRef } => {
   const [chats, setChats] = useState([]);
   const [selectedChat, setSelectedChat] = useState(null);
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [isMobile, setIsMobile] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const scrollRef = useRef();
+  const fileInputRef = useRef();
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 768);
@@ -51,8 +50,35 @@ export default function DashboardAdmin() {
     await supabase.from('messages').insert([{ chat_id: selectedChat.id, content: msgText, sender: 'admin' }]);
   };
 
+  const handleVideoUpload = async (event) => {
+    const videoFile = event.target.files[0];
+    if (!videoFile || !selectedChat) return;
+
+    setUploading(true);
+    const fileExtension = videoFile.name.split('.').pop();
+    const fileName = `${Date.now()}.${fileExtension}`;
+    const filePath = `${selectedChat.id}/${fileName}`; // Cartella per chat ID
+
+    const { data, error } = await supabase.storage.from('chat-videos').upload(filePath, videoFile);
+
+    if (error) {
+      console.error('Errore upload video:', error);
+      alert('Errore durante il caricamento del video.');
+      setUploading(false);
+      return;
+    }
+
+    const { data: publicUrlData } = supabase.storage.from('chat-videos').getPublicUrl(filePath);
+    const videoUrl = publicUrlData.publicUrl;
+
+    await supabase.from('messages').insert([{ chat_id: selectedChat.id, content: videoUrl, sender: 'admin', type: 'video' }]);
+    setUploading(false);
+    fileInputRef.current.value = ''; // Resetta il campo file
+  };
+
   const deleteChat = async (id) => {
     if (!window.confirm("Sei sicuro di voler eliminare questa chat per sempre?")) return;
+    // TODO: Elimina i video associati dal storage prima di eliminare i messaggi e la chat
     await supabase.from('messages').delete().eq('chat_id', id);
     await supabase.from('chats').delete().eq('id', id);
     if (selectedChat?.id === id) setSelectedChat(null);
@@ -68,7 +94,12 @@ export default function DashboardAdmin() {
     inputArea: { padding: '15px', backgroundColor: '#2a004f', display: 'flex', gap: '10px', borderTop: '1px solid #ffd700', paddingBottom: isMobile ? '30px' : '15px' },
     input: { flex: 1, padding: '12px', borderRadius: '25px', border: '1px solid #ffd700', backgroundColor: 'white', color: 'black', fontSize: '16px' },
     btn: { backgroundColor: '#ffd700', color: '#1a0033', border: 'none', padding: '10px 20px', borderRadius: '25px', fontWeight: 'bold', cursor: 'pointer' },
-    delBtn: { backgroundColor: '#ff4444', color: 'white', border: 'none', padding: '8px 15px', borderRadius: '8px', cursor: 'pointer', fontSize: '12px' }
+    delBtn: { backgroundColor: '#ff4444', color: 'white', border: 'none', padding: '8px 15px', borderRadius: '8px', cursor: 'pointer', fontSize: '12px' },
+    videoInputBtn: {
+      backgroundColor: '#007bff', // Blu per il video
+      color: 'white', border: 'none', padding: '10px 15px', borderRadius: '25px', cursor: 'pointer',
+      display: 'flex', alignItems: 'center', justifyContent: 'center'
+    }
   };
 
   return (
@@ -97,15 +128,34 @@ export default function DashboardAdmin() {
               {messages.map(m => (
                 <div key={m.id} style={{ alignSelf: m.sender === 'admin' ? 'flex-end' : 'flex-start', marginBottom: '10px', maxWidth: '85%' }}>
                   <div style={{ backgroundColor: m.sender === 'admin' ? '#4a148c' : '#330066', color: 'white', padding: '12px', borderRadius: '15px', border: '1px solid #ffd700' }}>
-                    {m.content}
+                    {m.type === 'video' ? (
+                      <video controls src={m.content} style={{ maxWidth: '100%', borderRadius: '8px' }} />
+                    ) : (
+                      m.content
+                    )}
                   </div>
                 </div>
               ))}
               <div ref={scrollRef} />
             </div>
             <div style={styles.inputArea}>
-              <input style={styles.input} value={input} onChange={e => setInput(e.target.value)} onKeyPress={e => e.key === 'Enter' && sendMsg()} placeholder="Scrivi un messaggio..." />
-              <button style={styles.btn} onClick={sendMsg}>INVIA</button>
+              <input 
+                type="file" 
+                accept="video/*" 
+                onChange={handleVideoUpload} 
+                style={{ display: 'none' }} 
+                ref={fileInputRef} 
+                disabled={uploading}
+              />
+              <button 
+                onClick={() => fileInputRef.current.click()} 
+                style={styles.videoInputBtn} 
+                disabled={uploading}
+              >
+                {uploading ? 'Caricamento...' : '🎥 Invia Video'}
+              </button>
+              <input style={styles.input} value={input} onChange={e => setInput(e.target.value)} onKeyPress={e => e.key === 'Enter' && sendMsg()} placeholder="Scrivi un messaggio..." disabled={uploading} />
+              <button style={styles.btn} onClick={sendMsg} disabled={uploading}>INVIA</button>
             </div>
           </>
         ) : (
