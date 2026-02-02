@@ -1,4 +1,7 @@
-import { useState, useEffect, useRef } => {
+import { useState, useEffect, useRef } from 'react';
+import { supabase } from '../lib/supabaseClient';
+
+export default function DashboardAdmin() {
   const [chats, setChats] = useState([]);
   const [selectedChat, setSelectedChat] = useState(null);
   const [messages, setMessages] = useState([]);
@@ -6,20 +9,15 @@ import { useState, useEffect, useRef } => {
   const [isMobile, setIsMobile] = useState(false);
   const [uploading, setUploading] = useState(false);
   const scrollRef = useRef();
-  const fileInputRef = useRef();
+  const fileRef = useRef();
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 768);
     handleResize();
     window.addEventListener('resize', handleResize);
     fetchChats();
-    const channel = supabase.channel('admin-updates').on('postgres_changes', 
-      { event: '*', schema: 'public', table: 'chats' }, () => fetchChats()
-    ).subscribe();
-    return () => {
-      window.removeEventListener('resize', handleResize);
-      supabase.removeChannel(channel);
-    };
+    const ch = supabase.channel('adm-upd').on('postgres_changes', { event: '*', schema: 'public', table: 'chats' }, () => fetchChats()).subscribe();
+    return () => { window.removeEventListener('resize', handleResize); supabase.removeChannel(ch); };
   }, []);
 
   const fetchChats = async () => {
@@ -34,133 +32,88 @@ import { useState, useEffect, useRef } => {
       setMessages(data || []);
     };
     fetchMsgs();
-    const msgChannel = supabase.channel(`chat-${selectedChat.id}`).on('postgres_changes',
-      { event: 'INSERT', schema: 'public', table: 'messages', filter: `chat_id=eq.${selectedChat.id}` },
-      (p) => setMessages(prev => [...prev, p.new])
+    const msgCh = supabase.channel(`chat-${selectedChat.id}`).on('postgres_changes',
+      { event: 'INSERT', schema: 'public', table: 'messages', filter: `chat_id=eq.${selectedChat.id}` }, (p) => setMessages(prev => [...prev, p.new])
     ).subscribe();
-    return () => supabase.removeChannel(msgChannel);
+    return () => supabase.removeChannel(msgCh);
   }, [selectedChat]);
 
   useEffect(() => { scrollRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
 
-  const sendMsg = async () => {
+  const send = async () => {
     if (!input.trim() || !selectedChat) return;
-    const msgText = input;
-    setInput('');
-    await supabase.from('messages').insert([{ chat_id: selectedChat.id, content: msgText, sender: 'admin' }]);
+    const val = input; setInput('');
+    await supabase.from('messages').insert([{ chat_id: selectedChat.id, content: val, sender: 'admin', type: 'text' }]);
   };
 
-  const handleVideoUpload = async (event) => {
-    const videoFile = event.target.files[0];
-    if (!videoFile || !selectedChat) return;
-
+  const uploadVideo = async (e) => {
+    const file = e.target.files[0];
+    if (!file || !selectedChat) return;
     setUploading(true);
-    const fileExtension = videoFile.name.split('.').pop();
-    const fileName = `${Date.now()}.${fileExtension}`;
-    const filePath = `${selectedChat.id}/${fileName}`; // Cartella per chat ID
-
-    const { data, error } = await supabase.storage.from('chat-videos').upload(filePath, videoFile);
-
-    if (error) {
-      console.error('Errore upload video:', error);
-      alert('Errore durante il caricamento del video.');
-      setUploading(false);
-      return;
-    }
-
-    const { data: publicUrlData } = supabase.storage.from('chat-videos').getPublicUrl(filePath);
-    const videoUrl = publicUrlData.publicUrl;
-
-    await supabase.from('messages').insert([{ chat_id: selectedChat.id, content: videoUrl, sender: 'admin', type: 'video' }]);
+    const fileName = `${Date.now()}_${file.name}`;
+    const { data, error } = await supabase.storage.from('chat-videos').upload(`${selectedChat.id}/${fileName}`, file);
+    
+    if (error) { alert("Errore caricamento"); setUploading(false); return; }
+    
+    const { data: urlData } = supabase.storage.from('chat-videos').getPublicUrl(data.path);
+    await supabase.from('messages').insert([{ chat_id: selectedChat.id, content: urlData.publicUrl, sender: 'admin', type: 'video' }]);
     setUploading(false);
-    fileInputRef.current.value = ''; // Resetta il campo file
   };
 
   const deleteChat = async (id) => {
-    if (!window.confirm("Sei sicuro di voler eliminare questa chat per sempre?")) return;
-    // TODO: Elimina i video associati dal storage prima di eliminare i messaggi e la chat
+    if (!confirm("Eliminare la chat?")) return;
     await supabase.from('messages').delete().eq('chat_id', id);
     await supabase.from('chats').delete().eq('id', id);
     if (selectedChat?.id === id) setSelectedChat(null);
     fetchChats();
   };
 
-  const styles = {
-    container: { display: 'flex', height: '100dvh', width: '100vw', backgroundColor: '#1a0033', color: '#ffd700', overflow: 'hidden' },
-    sidebar: { display: isMobile && selectedChat ? 'none' : 'flex', flexDirection: 'column', width: isMobile ? '100%' : '350px', borderRight: '2px solid #4a148c', backgroundColor: '#2a004f' },
-    main: { display: isMobile && !selectedChat ? 'none' : 'flex', flexDirection: 'column', flex: 1, backgroundColor: '#1a0033' },
+  const s = {
+    container: { display: 'flex', height: '100dvh', width: '100vw', backgroundColor: '#1a0033', color: '#ffd700' },
+    side: { display: isMobile && selectedChat ? 'none' : 'flex', flexDirection: 'column', width: isMobile ? '100%' : '300px', borderRight: '1px solid #4a148c', backgroundColor: '#2a004f' },
+    main: { display: isMobile && !selectedChat ? 'none' : 'flex', flexDirection: 'column', flex: 1 },
     header: { padding: '15px', backgroundColor: '#2a004f', borderBottom: '1px solid #ffd700', display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
-    msgArea: { flex: 1, overflowY: 'auto', padding: '15px', display: 'flex', flexDirection: 'column' },
-    inputArea: { padding: '15px', backgroundColor: '#2a004f', display: 'flex', gap: '10px', borderTop: '1px solid #ffd700', paddingBottom: isMobile ? '30px' : '15px' },
-    input: { flex: 1, padding: '12px', borderRadius: '25px', border: '1px solid #ffd700', backgroundColor: 'white', color: 'black', fontSize: '16px' },
-    btn: { backgroundColor: '#ffd700', color: '#1a0033', border: 'none', padding: '10px 20px', borderRadius: '25px', fontWeight: 'bold', cursor: 'pointer' },
-    delBtn: { backgroundColor: '#ff4444', color: 'white', border: 'none', padding: '8px 15px', borderRadius: '8px', cursor: 'pointer', fontSize: '12px' },
-    videoInputBtn: {
-      backgroundColor: '#007bff', // Blu per il video
-      color: 'white', border: 'none', padding: '10px 15px', borderRadius: '25px', cursor: 'pointer',
-      display: 'flex', alignItems: 'center', justifyContent: 'center'
-    }
+    footer: { padding: '10px', backgroundColor: '#2a004f', display: 'flex', gap: '8px', alignItems: 'center', borderTop: '1px solid #ffd700', paddingBottom: '30px' },
+    input: { flex: 1, padding: '10px', borderRadius: '20px', border: 'none', fontSize: '16px' },
+    btnVideo: { background: '#4a148c', border: '1px solid #ffd700', color: 'white', borderRadius: '50%', width: '40px', height: '40px', cursor: 'pointer', display: 'flex', justifyContent: 'center', alignItems: 'center' }
   };
 
   return (
-    <div style={styles.container}>
-      <div style={styles.sidebar}>
-        <div style={{ padding: '20px', fontSize: '1.2rem', fontWeight: 'bold', borderBottom: '1px solid #ffd700' }}>PANNELLO ADMIN</div>
-        <div style={{ flex: 1, overflowY: 'auto' }}>
-          {chats.map(c => (
-            <div key={c.id} onClick={() => setSelectedChat(c)} style={{ padding: '15px', borderBottom: '1px solid #4a148c', cursor: 'pointer', backgroundColor: selectedChat?.id === c.id ? '#4a148c' : 'transparent', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span>{c.client_name}</span>
-              <button onClick={(e) => { e.stopPropagation(); deleteChat(c.id); }} style={styles.delBtn}>ELIMINA</button>
-            </div>
-          ))}
-        </div>
+    <div style={s.container}>
+      <div style={s.side}>
+        <div style={{padding:'20px', fontWeight:'bold', borderBottom:'1px solid #ffd700'}}>CHATS</div>
+        {chats.map(c => (
+          <div key={c.id} onClick={() => setSelectedChat(c)} style={{padding:'15px', borderBottom:'1px solid #4a148c', cursor:'pointer', display:'flex', justifyContent:'space-between', backgroundColor: selectedChat?.id === c.id ? '#4a148c' : 'transparent'}}>
+            {c.client_name} <button onClick={(e) => {e.stopPropagation(); deleteChat(c.id);}} style={{background:'red', color:'white', border:'none', borderRadius:'4px', fontSize:'10px'}}>X</button>
+          </div>
+        ))}
       </div>
-
-      <div style={styles.main}>
+      <div style={s.main}>
         {selectedChat ? (
           <>
-            <div style={styles.header}>
-              {isMobile && <button onClick={() => setSelectedChat(null)} style={{ background: 'none', border: 'none', color: '#ffd700', fontSize: '20px' }}>⬅</button>}
-              <span style={{ fontWeight: 'bold' }}>{selectedChat.client_name}</span>
-              <button onClick={() => deleteChat(selectedChat.id)} style={styles.delBtn}>ELIMINA CHAT</button>
+            <div style={s.header}>
+              {isMobile && <button onClick={() => setSelectedChat(null)} style={{background:'none', border:'none', color:'#ffd700'}}>⬅</button>}
+              <span>{selectedChat.client_name}</span>
+              <button onClick={() => deleteChat(selectedChat.id)} style={{background:'red', color:'white', border:'none', padding:'5px 10px', borderRadius:'5px', fontSize:'12px'}}>ELIMINA</button>
             </div>
-            <div style={styles.msgArea}>
+            <div style={{flex:1, overflowY:'auto', padding:'15px'}}>
               {messages.map(m => (
-                <div key={m.id} style={{ alignSelf: m.sender === 'admin' ? 'flex-end' : 'flex-start', marginBottom: '10px', maxWidth: '85%' }}>
-                  <div style={{ backgroundColor: m.sender === 'admin' ? '#4a148c' : '#330066', color: 'white', padding: '12px', borderRadius: '15px', border: '1px solid #ffd700' }}>
-                    {m.type === 'video' ? (
-                      <video controls src={m.content} style={{ maxWidth: '100%', borderRadius: '8px' }} />
-                    ) : (
-                      m.content
-                    )}
+                <div key={m.id} style={{textAlign: m.sender === 'admin' ? 'right' : 'left', marginBottom:'10px'}}>
+                  <div style={{display:'inline-block', padding:'10px', borderRadius:'10px', background: m.sender === 'admin' ? '#4a148c' : '#330066', border: '1px solid #ffd700', maxWidth:'80%'}}>
+                    {m.type === 'video' ? <video src={m.content} controls style={{width:'100%', borderRadius:'8px'}} /> : m.content}
                   </div>
                 </div>
               ))}
               <div ref={scrollRef} />
             </div>
-            <div style={styles.inputArea}>
-              <input 
-                type="file" 
-                accept="video/*" 
-                onChange={handleVideoUpload} 
-                style={{ display: 'none' }} 
-                ref={fileInputRef} 
-                disabled={uploading}
-              />
-              <button 
-                onClick={() => fileInputRef.current.click()} 
-                style={styles.videoInputBtn} 
-                disabled={uploading}
-              >
-                {uploading ? 'Caricamento...' : '🎥 Invia Video'}
-              </button>
-              <input style={styles.input} value={input} onChange={e => setInput(e.target.value)} onKeyPress={e => e.key === 'Enter' && sendMsg()} placeholder="Scrivi un messaggio..." disabled={uploading} />
-              <button style={styles.btn} onClick={sendMsg} disabled={uploading}>INVIA</button>
+            <div style={s.footer}>
+              <input type="file" accept="video/*" ref={fileRef} onChange={uploadVideo} style={{display:'none'}} />
+              <button style={s.btnVideo} onClick={() => fileRef.current.click()}>{uploading ? '...' : '🎥'}</button>
+              <input style={s.input} value={input} onChange={e => setInput(e.target.value)} onKeyPress={e => e.key === 'Enter' && send()} placeholder="Scrivi..." />
+              <button onClick={send} style={{background:'#ffd700', border:'none', padding:'10px 15px', borderRadius:'20px', fontWeight:'bold'}}>INVIA</button>
             </div>
           </>
-        ) : (
-          <div style={{ margin: 'auto', opacity: 0.5 }}>Seleziona una chat dalla lista</div>
-        )}
+        ) : <div style={{margin:'auto'}}>Seleziona una chat</div>}
       </div>
     </div>
   );
