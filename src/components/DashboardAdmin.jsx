@@ -10,16 +10,16 @@ export default function DashboardAdmin() {
   const scrollRef = useRef();
 
   useEffect(() => {
-    const handleResize = () => setIsMobile(window.innerWidth < 768);
-    handleResize();
-    window.addEventListener('resize', handleResize);
+    const checkRes = () => setIsMobile(window.innerWidth < 768);
+    checkRes();
+    window.addEventListener('resize', checkRes);
     fetchChats();
-    const channel = supabase.channel('admin-global').on('postgres_changes', 
+    const ch = supabase.channel('adm-glob').on('postgres_changes', 
       { event: '*', schema: 'public', table: 'chats' }, () => fetchChats()
     ).subscribe();
     return () => {
-      window.removeEventListener('resize', handleResize);
-      supabase.removeChannel(channel);
+      window.removeEventListener('resize', checkRes);
+      supabase.removeChannel(ch);
     };
   }, []);
 
@@ -44,68 +44,70 @@ export default function DashboardAdmin() {
 
   useEffect(() => { scrollRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
 
-  const sendMsg = async () => {
+  const send = async () => {
     if (!input.trim() || !selectedChat) return;
-    const content = input;
+    const val = input;
     setInput('');
-    await supabase.from('messages').insert([{ chat_id: selectedChat.id, content, sender: 'admin' }]);
+    await supabase.from('messages').insert([{ chat_id: selectedChat.id, content: val, sender: 'admin' }]);
   };
 
-  const deleteChat = async (id) => {
-    if (!window.confirm("Eliminare questa chat?")) return;
+  const del = async (id) => {
+    if (!confirm("Eliminare definitivamente?")) return;
     await supabase.from('messages').delete().eq('chat_id', id);
     await supabase.from('chats').delete().eq('id', id);
     if (selectedChat?.id === id) setSelectedChat(null);
     fetchChats();
   };
 
-  const s = {
+  // Stili definiti esternamente per evitare errori vite:esbuild
+  const layout = {
     container: { display: 'flex', height: '100dvh', width: '100vw', backgroundColor: '#1a0033', color: '#ffd700', overflow: 'hidden' },
-    sidebar: { display: isMobile && selectedChat ? 'none' : 'flex', flexDirection: 'column', width: isMobile ? '100%' : '350px', borderRight: '2px solid #4a148c', backgroundColor: '#2a004f' },
-    main: { display: isMobile && !selectedChat ? 'none' : 'flex', flexDirection: 'column', flex: 1, backgroundColor: '#1a0033' },
-    item: { padding: '15px', borderBottom: '1px solid #4a148c', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
-    header: { padding: '15px', backgroundColor: '#2a004f', borderBottom: '1px solid #ffd700', display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
-    inputArea: { padding: '15px', backgroundColor: '#2a004f', display: 'flex', gap: '10px', borderTop: '1px solid #ffd700', paddingBottom: '30px' },
-    input: { flex: 1, padding: '12px', borderRadius: '25px', border: '1px solid #ffd700', backgroundColor: 'white', color: 'black', fontSize: '16px' },
-    btn: { backgroundColor: '#ffd700', color: '#1a0033', border: 'none', padding: '10px 20px', borderRadius: '25px', fontWeight: 'bold' },
-    del: { backgroundColor: '#ff4444', color: 'white', border: 'none', padding: '5px 10px', borderRadius: '5px', fontSize: '12px' }
+    side: { display: isMobile && selectedChat ? 'none' : 'flex', flexDirection: 'column', width: isMobile ? '100%' : '320px', borderRight: '1px solid #4a148c', backgroundColor: '#2a004f' },
+    chatArea: { display: isMobile && !selectedChat ? 'none' : 'flex', flexDirection: 'column', flex: 1, backgroundColor: '#1a0033' },
+    header: { padding: '15px', background: '#2a004f', borderBottom: '1px solid #ffd700', display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
+    row: { padding: '12px', borderBottom: '1px solid #4a148c', cursor: 'pointer', display: 'flex', justifyContent: 'space-between' },
+    box: { flex: 1, overflowY: 'auto', padding: '15px' },
+    footer: { padding: '15px', background: '#2a004f', display: 'flex', gap: '8px', borderTop: '1px solid #ffd700', paddingBottom: '35px' },
+    in: { flex: 1, padding: '12px', borderRadius: '20px', border: 'none', fontSize: '16px' },
+    btn: { background: '#ffd700', color: '#1a0033', border: 'none', padding: '10px 15px', borderRadius: '20px', fontWeight: 'bold' },
+    delBtn: { background: '#ff4444', color: 'white', border: 'none', padding: '4px 8px', borderRadius: '4px', fontSize: '11px' }
   };
 
   return (
-    <div style={s.container}>
-      <div style={s.sidebar}>
-        <div style={{ padding: '20px', fontWeight: 'bold', borderBottom: '1px solid #ffd700' }}>ADMIN PANEL</div>
+    <div style={layout.container}>
+      <div style={layout.side}>
+        <div style={{ padding: '20px', fontWeight: 'bold' }}>CLIENTI</div>
         {chats.map(c => (
-          <div key={c.id} onClick={() => setSelectedChat(c)} style={{ ...s.item, backgroundColor: selectedChat?.id === c.id ? '#4a148c' : 'transparent' }}>
-            <div>{c.client_name}</div>
-            <button style={s.del} onClick={(e) => { e.stopPropagation(); deleteChat(c.id); }}>ELIMINA</button>
+          <div key={c.id} onClick={() => setSelectedChat(c)} style={layout.row}>
+            <span>{c.client_name}</span>
+            <button onClick={(e) => { e.stopPropagation(); del(c.id); }} style={layout.delBtn}>X</button>
           </div>
         ))}
       </div>
-      <div style={s.main}>
+      <div style={layout.chatArea}>
         {selectedChat ? (
           <>
-            <div style={s.header}>
-              {isMobile && <button onClick={() => setSelectedChat(null)} style={{ background: 'none', border: 'none', color: '#ffd700', fontSize: '20px' }}>⬅</button>}
+            <div style={layout.header}>
+              {isMobile && <button onClick={() => setSelectedChat(null)} style={{color:'#ffd700', background:'none', border:'none'}}>Indietro</button>}
               <span>{selectedChat.client_name}</span>
-              <button style={s.del} onClick={() => deleteChat(selectedChat.id)}>Elimina Chat</button>
+              <button onClick={() => del(selectedChat.id)} style={layout.delBtn}>ELIMINA CHAT</button>
             </div>
-            <div style={{ flex: 1, overflowY: 'auto', padding: '15px' }}>
+            <div style={layout.box}>
               {messages.map(m => (
-                <div key={m.id} style={{ display: 'flex', justifyContent: m.sender === 'admin' ? 'flex-end' : 'flex-start', marginBottom: '10px' }}>
-                  <div style={{ backgroundColor: m.sender === 'admin' ? '#4a148c' : '#330066', color: 'white', padding: '10px 15px', borderRadius: '15px', border: '1px solid #ffd700', maxWidth: '80%' }}>
+                <div key={m.id} style={{ textAlign: m.sender === 'admin' ? 'right' : 'left', marginBottom: '10px' }}>
+                  <div style={{ display: 'inline-block', padding: '10px', borderRadius: '12px', background: m.sender === 'admin' ? '#4a148c' : '#330066', border: '1px solid #ffd700', maxWidth: '80%' }}>
                     {m.content}
                   </div>
                 </div>
               ))}
               <div ref={scrollRef} />
             </div>
-            <div style={s.inputArea}>
-              <input style={s.input} value={input} onChange={e => setInput(e.target.value)} onKeyPress={e => e.key === 'Enter' && sendMsg()} placeholder="Scrivi..." />
-              <button style={s.btn} onClick={sendMsg}>Invia</button>
+            <div style={layout.footer}>
+              <input style={layout.in} value={input} onChange={e => setInput(e.target.value)} placeholder="Scrivi..." />
+              <button style={layout.btn} onClick={send}>Invia</button>
             </div>
           </>
-        ) : <div style={{ margin: 'auto' }}>Seleziona una chat</div>}
+        ) : <div style={{margin:'auto'}}>Seleziona una chat</div>}
       </div>
     </div>
   );
