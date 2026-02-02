@@ -10,16 +10,16 @@ export default function DashboardAdmin() {
   const scrollRef = useRef();
 
   useEffect(() => {
-    const checkRes = () => setIsMobile(window.innerWidth < 768);
-    checkRes();
-    window.addEventListener('resize', checkRes);
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    handleResize();
+    window.addEventListener('resize', handleResize);
     fetchChats();
-    const ch = supabase.channel('adm-glob').on('postgres_changes', 
+    const channel = supabase.channel('admin-updates').on('postgres_changes', 
       { event: '*', schema: 'public', table: 'chats' }, () => fetchChats()
     ).subscribe();
     return () => {
-      window.removeEventListener('resize', checkRes);
-      supabase.removeChannel(ch);
+      window.removeEventListener('resize', handleResize);
+      supabase.removeChannel(channel);
     };
   }, []);
 
@@ -35,79 +35,82 @@ export default function DashboardAdmin() {
       setMessages(data || []);
     };
     fetchMsgs();
-    const sub = supabase.channel(`chat-${selectedChat.id}`).on('postgres_changes',
+    const msgChannel = supabase.channel(`chat-${selectedChat.id}`).on('postgres_changes',
       { event: 'INSERT', schema: 'public', table: 'messages', filter: `chat_id=eq.${selectedChat.id}` },
       (p) => setMessages(prev => [...prev, p.new])
     ).subscribe();
-    return () => supabase.removeChannel(sub);
+    return () => supabase.removeChannel(msgChannel);
   }, [selectedChat]);
 
   useEffect(() => { scrollRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
 
-  const send = async () => {
+  const sendMsg = async () => {
     if (!input.trim() || !selectedChat) return;
-    const val = input;
+    const msgText = input;
     setInput('');
-    await supabase.from('messages').insert([{ chat_id: selectedChat.id, content: val, sender: 'admin' }]);
+    await supabase.from('messages').insert([{ chat_id: selectedChat.id, content: msgText, sender: 'admin' }]);
   };
 
-  const del = async (id) => {
-    if (!confirm("Eliminare definitivamente?")) return;
+  const deleteChat = async (id) => {
+    if (!window.confirm("Sei sicuro di voler eliminare questa chat per sempre?")) return;
     await supabase.from('messages').delete().eq('chat_id', id);
     await supabase.from('chats').delete().eq('id', id);
     if (selectedChat?.id === id) setSelectedChat(null);
     fetchChats();
   };
 
-  // Stili definiti esternamente per evitare errori vite:esbuild
-  const layout = {
+  const styles = {
     container: { display: 'flex', height: '100dvh', width: '100vw', backgroundColor: '#1a0033', color: '#ffd700', overflow: 'hidden' },
-    side: { display: isMobile && selectedChat ? 'none' : 'flex', flexDirection: 'column', width: isMobile ? '100%' : '320px', borderRight: '1px solid #4a148c', backgroundColor: '#2a004f' },
-    chatArea: { display: isMobile && !selectedChat ? 'none' : 'flex', flexDirection: 'column', flex: 1, backgroundColor: '#1a0033' },
-    header: { padding: '15px', background: '#2a004f', borderBottom: '1px solid #ffd700', display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
-    row: { padding: '12px', borderBottom: '1px solid #4a148c', cursor: 'pointer', display: 'flex', justifyContent: 'space-between' },
-    box: { flex: 1, overflowY: 'auto', padding: '15px' },
-    footer: { padding: '15px', background: '#2a004f', display: 'flex', gap: '8px', borderTop: '1px solid #ffd700', paddingBottom: '35px' },
-    in: { flex: 1, padding: '12px', borderRadius: '20px', border: 'none', fontSize: '16px' },
-    btn: { background: '#ffd700', color: '#1a0033', border: 'none', padding: '10px 15px', borderRadius: '20px', fontWeight: 'bold' },
-    delBtn: { background: '#ff4444', color: 'white', border: 'none', padding: '4px 8px', borderRadius: '4px', fontSize: '11px' }
+    sidebar: { display: isMobile && selectedChat ? 'none' : 'flex', flexDirection: 'column', width: isMobile ? '100%' : '350px', borderRight: '2px solid #4a148c', backgroundColor: '#2a004f' },
+    main: { display: isMobile && !selectedChat ? 'none' : 'flex', flexDirection: 'column', flex: 1, backgroundColor: '#1a0033' },
+    header: { padding: '15px', backgroundColor: '#2a004f', borderBottom: '1px solid #ffd700', display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
+    msgArea: { flex: 1, overflowY: 'auto', padding: '15px', display: 'flex', flexDirection: 'column' },
+    inputArea: { padding: '15px', backgroundColor: '#2a004f', display: 'flex', gap: '10px', borderTop: '1px solid #ffd700', paddingBottom: isMobile ? '30px' : '15px' },
+    input: { flex: 1, padding: '12px', borderRadius: '25px', border: '1px solid #ffd700', backgroundColor: 'white', color: 'black', fontSize: '16px' },
+    btn: { backgroundColor: '#ffd700', color: '#1a0033', border: 'none', padding: '10px 20px', borderRadius: '25px', fontWeight: 'bold', cursor: 'pointer' },
+    delBtn: { backgroundColor: '#ff4444', color: 'white', border: 'none', padding: '8px 15px', borderRadius: '8px', cursor: 'pointer', fontSize: '12px' }
   };
 
   return (
-    <div style={layout.container}>
-      <div style={layout.side}>
-        <div style={{ padding: '20px', fontWeight: 'bold' }}>CLIENTI</div>
-        {chats.map(c => (
-          <div key={c.id} onClick={() => setSelectedChat(c)} style={layout.row}>
-            <span>{c.client_name}</span>
-            <button onClick={(e) => { e.stopPropagation(); del(c.id); }} style={layout.delBtn}>X</button>
-          </div>
-        ))}
+    <div style={styles.container}>
+      <div style={styles.sidebar}>
+        <div style={{ padding: '20px', fontSize: '1.2rem', fontWeight: 'bold', borderBottom: '1px solid #ffd700' }}>PANNELLO ADMIN</div>
+        <div style={{ flex: 1, overflowY: 'auto' }}>
+          {chats.map(c => (
+            <div key={c.id} onClick={() => setSelectedChat(c)} style={{ padding: '15px', borderBottom: '1px solid #4a148c', cursor: 'pointer', backgroundColor: selectedChat?.id === c.id ? '#4a148c' : 'transparent', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span>{c.client_name}</span>
+              <button onClick={(e) => { e.stopPropagation(); deleteChat(c.id); }} style={styles.delBtn}>ELIMINA</button>
+            </div>
+          ))}
+        </div>
       </div>
-      <div style={layout.chatArea}>
+
+      <div style={styles.main}>
         {selectedChat ? (
           <>
-            <div style={layout.header}>
-              {isMobile && <button onClick={() => setSelectedChat(null)} style={{color:'#ffd700', background:'none', border:'none'}}>Indietro</button>}
-              <span>{selectedChat.client_name}</span>
-              <button onClick={() => del(selectedChat.id)} style={layout.delBtn}>ELIMINA CHAT</button>
+            <div style={styles.header}>
+              {isMobile && <button onClick={() => setSelectedChat(null)} style={{ background: 'none', border: 'none', color: '#ffd700', fontSize: '20px' }}>⬅</button>}
+              <span style={{ fontWeight: 'bold' }}>{selectedChat.client_name}</span>
+              <button onClick={() => deleteChat(selectedChat.id)} style={styles.delBtn}>ELIMINA CHAT</button>
             </div>
-            <div style={layout.box}>
+            <div style={styles.msgArea}>
               {messages.map(m => (
-                <div key={m.id} style={{ textAlign: m.sender === 'admin' ? 'right' : 'left', marginBottom: '10px' }}>
-                  <div style={{ display: 'inline-block', padding: '10px', borderRadius: '12px', background: m.sender === 'admin' ? '#4a148c' : '#330066', border: '1px solid #ffd700', maxWidth: '80%' }}>
+                <div key={m.id} style={{ alignSelf: m.sender === 'admin' ? 'flex-end' : 'flex-start', marginBottom: '10px', maxWidth: '85%' }}>
+                  <div style={{ backgroundColor: m.sender === 'admin' ? '#4a148c' : '#330066', color: 'white', padding: '12px', borderRadius: '15px', border: '1px solid #ffd700' }}>
                     {m.content}
                   </div>
                 </div>
               ))}
               <div ref={scrollRef} />
             </div>
-            <div style={layout.footer}>
-              <input style={layout.in} value={input} onChange={e => setInput(e.target.value)} placeholder="Scrivi..." />
-              <button style={layout.btn} onClick={send}>Invia</button>
+            <div style={styles.inputArea}>
+              <input style={styles.input} value={input} onChange={e => setInput(e.target.value)} onKeyPress={e => e.key === 'Enter' && sendMsg()} placeholder="Scrivi un messaggio..." />
+              <button style={styles.btn} onClick={sendMsg}>INVIA</button>
             </div>
           </>
-        ) : <div style={{margin:'auto'}}>Seleziona una chat</div>}
+        ) : (
+          <div style={{ margin: 'auto', opacity: 0.5 }}>Seleziona una chat dalla lista</div>
+        )}
       </div>
     </div>
   );
