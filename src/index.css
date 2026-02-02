@@ -5,22 +5,31 @@ body, html, #root {
   width: 100%;
   overflow: hidden;
 }
-/* Layout per PC (schermi grandi) */
-.container {
+/* Layout base per tutti */
+.dashboard-container {
   display: flex;
+  height: 100vh;
+  width: 100%;
 }
 
-/* Layout per Mobile (schermi piccoli) */
+.sidebar {
+  width: 300px;
+  border-right: 1px solid #ddd;
+}
+
+.chat-box {
+  flex-grow: 1;
+}
+
+/* Regole speciali per il Mobile */
 @media (max-width: 768px) {
-  .sidebar {
-    /* Se una chat è selezionata, nascondi la lista */
-    display: ${selectedChat ? 'none' : 'block'};
-    width: 100%;
+  .sidebar.hidden-mobile {
+    display: none;
   }
-  
-  .chat-box {
-    /* Se nessuna chat è selezionata, nascondi il box messaggi */
-    display: ${selectedChat ? 'block' : 'none'};
-    width: 100%;
+  .chat-box.hidden-mobile {
+    display: none;
+  }
+  .sidebar, .chat-box {
+    width: 100% !important;
   }
 }
