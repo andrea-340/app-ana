@@ -8,7 +8,7 @@ export default function DashboardAdmin() {
   const [messages, setMessages] = useState([]);
   const [unreadCounts, setUnreadCounts] = useState({});
   const [input, setInput] = useState('');
-  const [uploadProgress, setUploadProgress] = useState(0); 
+  const [uploadProgress, setUploadProgress] = useState(0); // Percentuale caricamento
   const [isUploading, setIsUploading] = useState(false);
   
   const scrollRef = useRef();
@@ -28,6 +28,7 @@ export default function DashboardAdmin() {
     setChats(data || []);
   };
 
+  // Notifiche e Badge
   useEffect(() => {
     const globalSub = supabase.channel('global-admin')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, (p) => {
@@ -39,25 +40,30 @@ export default function DashboardAdmin() {
     return () => supabase.removeChannel(globalSub);
   }, [selectedChat]);
 
+  // Messaggi della chat selezionata
   useEffect(() => {
     if (!selectedChat) return;
     setUnreadCounts(prev => ({ ...prev, [selectedChat.id]: 0 }));
+    
     const fetchMsgs = async () => {
       const { data } = await supabase.from('messages').select('*').eq('chat_id', selectedChat.id).order('created_at', { ascending: true });
       setMessages(data || []);
     };
     fetchMsgs();
+
     const msgCh = supabase.channel(`chat-${selectedChat.id}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'messages' }, () => fetchMsgs())
       .subscribe();
+
     return () => supabase.removeChannel(msgCh);
   }, [selectedChat]);
 
   useEffect(() => { scrollRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
 
+  // AZIONI
   const deleteChat = async (e, id) => {
     e.stopPropagation();
-    if (confirm("Eliminare questa chat?")) {
+    if (confirm("Eliminare questa chat e tutti i messaggi?")) {
       await supabase.from('chats').delete().eq('id', id);
       setSelectedChat(null);
       fetchChats();
@@ -65,7 +71,7 @@ export default function DashboardAdmin() {
   };
 
   const deleteMessage = async (msgId) => {
-    if (confirm("Eliminare questo messaggio?")) {
+    if (confirm("Eliminare questo messaggio per tutti?")) {
       await supabase.from('messages').delete().eq('id', msgId);
     }
   };
@@ -76,43 +82,28 @@ export default function DashboardAdmin() {
     await supabase.from('messages').insert([{ chat_id: selectedChat.id, content: val, sender: 'admin', type: 'text' }]);
   };
 
-  // --- LOGICA VELOCIZZATA E OTTIMIZZATA ---
   const handleVideoUpload = async (e) => {
     const file = e.target.files[0];
     if (!file || !selectedChat) return;
 
     setIsUploading(true);
-    setUploadProgress(0);
+    setUploadProgress(10); // Inizio simulato
 
-    // Pulizia nome file per evitare errori di caricamento
-    const cleanName = file.name.replace(/[^a-zA-Z0-9.]/g, '_');
-    const fileName = `${Date.now()}_${cleanName}`;
+    const fileName = `${Date.now()}_${file.name}`;
     
-    // Inizio Upload Diretto con monitoraggio reale
-    const { data, error } = await supabase.storage
-      .from('video-bucket')
-      .upload(`${selectedChat.id}/${fileName}`, file, {
-        cacheControl: '3600',
-        upsert: false,
-        onUploadProgress: (progress) => {
-          const percent = (progress.loaded / progress.total) * 100;
-          setUploadProgress(Math.round(percent));
-        },
-      });
+    // Upload con monitoraggio (Supabase standard non ha progress nativo in JS semplice, usiamo un trucco di stato)
+    const { data, error } = await supabase.storage.from('video-bucket').upload(`${selectedChat.id}/${fileName}`, file, {
+      onUploadProgress: (progress) => {
+        const percent = (progress.loaded / progress.total) * 100;
+        setUploadProgress(Math.round(percent));
+      },
+    });
 
     if (!error) {
       const { data: urlData } = supabase.storage.from('video-bucket').getPublicUrl(data.path);
-      await supabase.from('messages').insert([{ 
-        chat_id: selectedChat.id, 
-        content: urlData.publicUrl, 
-        sender: 'admin', 
-        type: 'video' 
-      }]);
+      await supabase.from('messages').insert([{ chat_id: selectedChat.id, content: urlData.publicUrl, sender: 'admin', type: 'video' }]);
     } else {
-      // Se l'errore è dovuto alla grandezza, avvisa l'utente
-      alert(error.message.includes('Payload too large') 
-        ? "Video troppo pesante per Supabase! Aumenta il limite nelle impostazioni dello Storage." 
-        : "Errore caricamento!");
+      alert("Errore caricamento!");
     }
     setIsUploading(false);
     setUploadProgress(0);
@@ -138,8 +129,11 @@ export default function DashboardAdmin() {
               background: selectedChat?.id === c.id ? 'rgba(212,175,55,0.2)' : 'transparent',
               display: 'flex', justifyContent: 'space-between', alignItems: 'center'
             }}>
-              <span>{c.client_name}</span>
-              <button onClick={(e) => deleteChat(e, c.id)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}>🗑️</button>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <span>{c.client_name}</span>
+                {unreadCounts[c.id] > 0 && <span style={{ background: '#ff4444', borderRadius: '50%', padding: '2px 8px', fontSize: '12px' }}>{unreadCounts[c.id]}</span>}
+              </div>
+              <button onClick={(e) => deleteChat(e, c.id)} style={{ background: 'none', border: 'none', fontSize: '18px' }}>🗑️</button>
             </div>
           ))}
         </div>
@@ -160,19 +154,21 @@ export default function DashboardAdmin() {
                   alignSelf: m.sender === 'admin' ? 'flex-end' : 'flex-start',
                   backgroundColor: m.sender === 'admin' ? '#d4af37' : '#2a004f',
                   color: m.sender === 'admin' ? '#1a0033' : '#fff',
-                  padding: '12px', borderRadius: '15px', maxWidth: '80%'
+                  padding: '12px', borderRadius: '15px', maxWidth: '80%', position: 'relative'
                 }}>
                   {m.type === 'video' ? <video src={m.content} controls style={{ width: '100%', borderRadius: '10px' }} /> : m.content}
+                  <div style={{ fontSize: '9px', opacity: 0.6, marginTop: '5px', textAlign: 'right' }}>DOPPIO CLICK PER ELIMINARE</div>
                 </div>
               ))}
               <div ref={scrollRef} />
             </div>
 
+            {/* Barra Caricamento Video */}
             {isUploading && (
-              <div style={{ background: '#1a0033', padding: '10px 20px', borderTop: '1px solid #d4af37' }}>
-                <div style={{ color: '#d4af37', fontSize: '12px', marginBottom: '5px' }}>Caricamento super veloce: {uploadProgress}%</div>
+              <div style={{ background: '#1a0033', padding: '10px 20px' }}>
+                <div style={{ color: '#d4af37', fontSize: '12px', marginBottom: '5px' }}>Caricamento video: {uploadProgress}%</div>
                 <div style={{ width: '100%', height: '8px', background: '#0f001a', borderRadius: '4px', overflow: 'hidden' }}>
-                  <div style={{ width: `${uploadProgress}%`, height: '100%', background: '#d4af37', transition: 'width 0.1s linear' }} />
+                  <div style={{ width: `${uploadProgress}%`, height: '100%', background: '#d4af37', transition: 'width 0.3s' }} />
                 </div>
               </div>
             )}
@@ -184,13 +180,13 @@ export default function DashboardAdmin() {
               </button>
               <input style={{ flex: 1, padding: '12px', borderRadius: '25px', border: '1px solid #d4af37', background: '#0f001a', color: '#fff' }} 
                      value={input} onChange={e => setInput(e.target.value)} onKeyPress={e => e.key === 'Enter' && sendText()} placeholder="Scrivi un messaggio..." />
-              <button onClick={sendText} style={{ background: '#d4af37', border: 'none', padding: '10px 20px', borderRadius: '25px', fontWeight: 'bold' }}>INVIA</button>
+              <button onClick={sendText} style={{ background: '#d4af37', border: 'none', padding: '10px 20px', borderRadius: '25px', fontWeight: 'bold', cursor: 'pointer' }}>INVIA</button>
             </div>
           </>
         ) : (
           <div style={{ margin: 'auto', textAlign: 'center', color: '#d4af37', opacity: 0.5 }}>
             <p style={{ fontSize: '40px' }}>🔮</p>
-            <p>Seleziona una cliente</p>
+            <p>Seleziona una cliente per visualizzare il consulto</p>
           </div>
         )}
       </div>
