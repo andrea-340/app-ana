@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from '../lib/supabaseClient';
-import fotoAnastasia from '../assets/anastasia.jpg';
+// 1. Questo import è corretto se la foto è in src/assets/anastasia.jpg
+import fotoAnastasia from '../assets/anastasia.jpg'; 
+
 export default function ChatCliente() {
   const [nome, setNome] = useState('');
   const [chatId, setChatId] = useState(localStorage.getItem('chat_token'));
@@ -9,8 +11,11 @@ export default function ChatCliente() {
   const scrollRef = useRef();
 
   // RISORSE ESTERNE
-  const bgImage = "https://images.unsplash.com/photo-1514897575457-c4db467cf78e?auto=format&fit=crop&q=80&w=2000"; // Sfondo magico scuro
- const fotoCartomante = "https://github.com/andrea-340/app-ana/blob/main/src/assets/anastasia.jpg";
+  const bgImage = "https://images.unsplash.com/photo-1514897575457-c4db467cf78e?auto=format&fit=crop&q=80&w=2000";
+  
+  // 2. MODIFICA QUI: Usa direttamente la variabile importata
+  const fotoCartomante = fotoAnastasia; 
+
   const tiktokUrl = "https://www.tiktok.com/@anastasia.lapiubella?_r=1&_t=ZN-93bLbLeYkBa";
   const tiktokLogo = "https://cdn-icons-png.flaticon.com/512/3046/3046121.png";
 
