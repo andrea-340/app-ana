@@ -10,7 +10,7 @@ export default function ChatCliente() {
 
   // RISORSE ESTERNE
   const bgImage = "https://images.unsplash.com/photo-1514897575457-c4db467cf78e?auto=format&fit=crop&q=80&w=2000"; // Sfondo magico scuro
-  const fotoCartomante = "URL_DELLA_TUA_FOTO_QUI"; // Incolla qui il link diretto alla foto di Anastasia
+ const fotoCartomante = "/assets/anastasia.jpg";
   const tiktokUrl = "https://www.tiktok.com/@anastasia.lapiubella?_r=1&_t=ZN-93bLbLeYkBa";
   const tiktokLogo = "https://cdn-icons-png.flaticon.com/512/3046/3046121.png";
 
