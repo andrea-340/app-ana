@@ -7,7 +7,7 @@ export default function ChatCliente() {
   const [chatId, setChatId] = useState(localStorage.getItem('chat_token'));
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
-  const [downloadingId, setDownloadingId] = useState(null); // Stato per il caricamento download
+  const [downloadingId, setDownloadingId] = useState(null); 
   const scrollRef = useRef();
 
   const bgImage = "https://images.unsplash.com/photo-1514897575457-c4db467cf78e?auto=format&fit=crop&q=80&w=2000";
@@ -35,7 +35,6 @@ export default function ChatCliente() {
 
   useEffect(() => { scrollRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
 
-  // FUNZIONE PER IL DOWNLOAD DIRETTO FORZATO
   const forceDownload = async (url, id) => {
     setDownloadingId(id);
     try {
@@ -79,7 +78,6 @@ export default function ChatCliente() {
 
   const styles = {
     avatar: { width: '45px', height: '45px', borderRadius: '50%', border: '2px solid #d4af37', objectFit: 'cover' },
-    tiktokButton: { display: 'flex', alignItems: 'center', background: 'rgba(255,255,255,0.1)', padding: '4px', borderRadius: '50%', border: '1px solid #d4af37', textDecoration: 'none', transition: '0.3s' },
     downloadBtn: {
       display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '12px',
       background: '#d4af37', color: '#1a0033', borderRadius: '10px', cursor: 'pointer',
@@ -92,7 +90,14 @@ export default function ChatCliente() {
       <div style={{ height: '100dvh', display: 'flex', justifyContent: 'center', alignItems: 'center', background: `linear-gradient(rgba(20, 0, 40, 0.9), rgba(20, 0, 40, 0.9)), url(${bgImage})`, backgroundSize: 'cover', fontFamily: 'serif' }}>
         <div style={{ background: 'rgba(30, 0, 60, 0.8)', padding: '40px', borderRadius: '30px', border: '1px solid #d4af37', textAlign: 'center', width: '85%', maxWidth: '380px', backdropFilter: 'blur(15px)' }}>
           <img src={fotoCartomante} style={{ width: '100px', height: '100px', borderRadius: '50%', border: '3px solid #d4af37', marginBottom: '15px' }} alt="Anastasia" />
-          <h2 style={{ color: '#d4af37', fontSize: '24px', marginBottom: '20px' }}>Anastasia</h2>
+          <h2 style={{ color: '#d4af37', fontSize: '24px', marginBottom: '5px' }}>Anastasia</h2>
+          
+          {/* LINK TIKTOK NELLA SCHERMATA INIZIALE */}
+          <a href={tiktokUrl} target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', textDecoration: 'none', marginBottom: '20px', opacity: 0.9 }}>
+            <img src={tiktokLogo} style={{ width: '20px', height: '20px' }} alt="TikTok" />
+            <span style={{ color: 'white', fontSize: '14px' }}>@anastasia.lapiubella</span>
+          </a>
+
           <input style={{ padding: '15px', borderRadius: '12px', marginBottom: '15px', width: '100%', border: '1px solid #d4af37', background: 'rgba(255,255,255,0.05)', color: 'white', textAlign: 'center' }} placeholder="Inserisci il tuo nome" value={nome} onChange={e => setNome(e.target.value)} />
           <button onClick={startChat} style={{ background: 'linear-gradient(45deg, #d4af37, #f9e29c)', width: '100%', padding: '15px', borderRadius: '12px', fontWeight: 'bold', border: 'none', color: '#1a0033', cursor: 'pointer' }}>INIZIA IL CONSULTO</button>
         </div>
@@ -108,7 +113,7 @@ export default function ChatCliente() {
           <div style={{ display: 'flex', flexDirection: 'column' }}>
             <div style={{ fontWeight: 'bold' }}>Anastasia</div>
             <a href={tiktokUrl} target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '5px', marginTop: '2px' }}>
-                <img src={tiktokLogo} style={{ width: '18px', height: '18px' }} alt="TikTok" />
+                <img src={tiktokLogo} style={{ width: '16px', height: '16px' }} alt="TikTok" />
                 <span style={{ fontSize: '10px', color: '#fff', opacity: 0.8 }}>Seguimi su TikTok</span>
             </a>
           </div>
