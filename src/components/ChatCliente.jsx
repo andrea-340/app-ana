@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from '../lib/supabaseClient';
-// 1. Questo import è corretto se la foto è in src/assets/anastasia.jpg
 import fotoAnastasia from '../assets/anastasia.jpg'; 
 
 export default function ChatCliente() {
@@ -12,10 +11,7 @@ export default function ChatCliente() {
 
   // RISORSE ESTERNE
   const bgImage = "https://images.unsplash.com/photo-1514897575457-c4db467cf78e?auto=format&fit=crop&q=80&w=2000";
-  
-  // 2. MODIFICA QUI: Usa direttamente la variabile importata
   const fotoCartomante = fotoAnastasia; 
-
   const tiktokUrl = "https://www.tiktok.com/@anastasia.lapiubella?_r=1&_t=ZN-93bLbLeYkBa";
   const tiktokLogo = "https://cdn-icons-png.flaticon.com/512/3046/3046121.png";
 
@@ -26,7 +22,14 @@ export default function ChatCliente() {
       if (data) setMessages(data);
     };
     fetchMsgs();
-    const sub = supabase.channel(`chat-${chatId}`).on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `chat_id=eq.${chatId}` }, (p) => setMessages(prev => [...prev, p.new])).subscribe();
+
+    const sub = supabase.channel(`chat-${chatId}`)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `chat_id=eq.${chatId}` }, (p) => setMessages(prev => [...prev, p.new]))
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'messages' }, (p) => {
+        setMessages(prev => prev.filter(m => m.id !== p.old.id));
+      })
+      .subscribe();
+
     return () => supabase.removeChannel(sub);
   }, [chatId]);
 
@@ -74,6 +77,21 @@ export default function ChatCliente() {
       color: '#fff',
       fontSize: '12px',
       marginTop: '5px'
+    },
+    downloadBtn: {
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: '8px',
+      padding: '10px',
+      background: '#d4af37',
+      color: '#1a0033',
+      borderRadius: '10px',
+      textDecoration: 'none',
+      fontSize: '13px',
+      fontWeight: 'bold',
+      marginTop: '10px',
+      transition: '0.3s'
     }
   };
 
@@ -92,7 +110,7 @@ export default function ChatCliente() {
           <button onClick={startChat} style={{ background: 'linear-gradient(45deg, #d4af37, #f9e29c)', width: '100%', padding: '15px', borderRadius: '12px', fontWeight: 'bold', border: 'none', color: '#1a0033', cursor: 'pointer', marginBottom: '15px' }}>INIZIA IL CONSULTO</button>
           
           <a href={tiktokUrl} target="_blank" rel="noreferrer" style={{ ...styles.tiktokButton, justifyContent: 'center' }}>
-            <img src={tiktokLogo} style={{ width: '18px' }} /> Seguimi su TikTok
+            <img src={tiktokLogo} style={{ width: '18px' }} alt="Tiktok" /> Seguimi su TikTok
           </a>
         </div>
       </div>
@@ -104,11 +122,11 @@ export default function ChatCliente() {
       {/* HEADER */}
       <div style={{ padding: '12px 20px', background: '#1a0033', display: 'flex', justifyContent: 'space-between', color: '#d4af37', borderBottom: '1px solid #d4af37', alignItems: 'center', zIndex: 10 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <img src={fotoCartomante} style={styles.avatar} />
+          <img src={fotoCartomante} style={styles.avatar} alt="Anastasia" />
           <div>
             <div style={{ fontWeight: 'bold', fontSize: '16px' }}>Anastasia</div>
             <a href={tiktokUrl} target="_blank" rel="noreferrer" style={{ ...styles.tiktokButton, padding: '2px 8px', fontSize: '10px' }}>
-              <img src={tiktokLogo} style={{ width: '12px' }} /> TikTok
+              <img src={tiktokLogo} style={{ width: '12px' }} alt="Tiktok" /> TikTok
             </a>
           </div>
         </div>
@@ -119,7 +137,7 @@ export default function ChatCliente() {
       <div style={{ flex: 1, overflowY: 'auto', padding: '20px', backgroundImage: `linear-gradient(rgba(15, 0, 26, 0.95), rgba(15, 0, 26, 0.95)), url(${bgImage})`, backgroundSize: 'cover' }}>
         {messages.map(m => (
           <div key={m.id} style={{ display: 'flex', justifyContent: m.sender === 'client' ? 'flex-end' : 'flex-start', marginBottom: '20px', alignItems: 'flex-end', gap: '8px' }}>
-            {m.sender !== 'client' && <img src={fotoCartomante} style={{ width: '30px', height: '30px', borderRadius: '50%', border: '1px solid #d4af37' }} />}
+            {m.sender !== 'client' && <img src={fotoCartomante} style={{ width: '30px', height: '30px', borderRadius: '50%', border: '1px solid #d4af37' }} alt="Anastasia" />}
             <div style={{ 
               padding: '12px 16px', 
               borderRadius: m.sender === 'client' ? '20px 20px 0px 20px' : '20px 20px 20px 0px', 
@@ -127,9 +145,25 @@ export default function ChatCliente() {
               color: 'white', 
               border: '1px solid #d4af37', 
               maxWidth: '75%',
-              fontSize: '15px'
+              fontSize: '15px',
+              boxShadow: '0 4px 15px rgba(0,0,0,0.3)'
             }}>
-              {m.type === 'video' ? <video src={m.content} controls style={{ width: '100%', borderRadius: '10px' }} /> : <span>{m.content}</span>}
+              {m.type === 'video' ? (
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                  <video src={m.content} controls style={{ width: '100%', borderRadius: '10px' }} />
+                  <a 
+                    href={m.content} 
+                    download={`Consulto_Anastasia.mp4`}
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    style={styles.downloadBtn}
+                  >
+                    📥 SCARICA IL VIDEO
+                  </a>
+                </div>
+              ) : (
+                <span style={{ whiteSpace: 'pre-wrap' }}>{m.content}</span>
+              )}
             </div>
           </div>
         ))}
