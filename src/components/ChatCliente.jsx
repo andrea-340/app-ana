@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from '../lib/supabaseClient';
-
+import fotoAnastasia from '../assets/anastasia.jpg';
 export default function ChatCliente() {
   const [nome, setNome] = useState('');
   const [chatId, setChatId] = useState(localStorage.getItem('chat_token'));
