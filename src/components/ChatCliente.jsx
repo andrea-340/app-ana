@@ -79,7 +79,7 @@ export default function ChatCliente() {
 
   const styles = {
     avatar: { width: '45px', height: '45px', borderRadius: '50%', border: '2px solid #d4af37', objectFit: 'cover' },
-    tiktokButton: { display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(0,0,0,0.6)', padding: '5px 12px', borderRadius: '20px', border: '1px solid rgba(255,255,255,0.2)', textDecoration: 'none', color: '#fff', fontSize: '12px', marginTop: '5px' },
+    tiktokButton: { display: 'flex', alignItems: 'center', background: 'rgba(255,255,255,0.1)', padding: '4px', borderRadius: '50%', border: '1px solid #d4af37', textDecoration: 'none', transition: '0.3s' },
     downloadBtn: {
       display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '12px',
       background: '#d4af37', color: '#1a0033', borderRadius: '10px', cursor: 'pointer',
@@ -105,7 +105,13 @@ export default function ChatCliente() {
       <div style={{ padding: '12px 20px', background: '#1a0033', display: 'flex', justifyContent: 'space-between', color: '#d4af37', borderBottom: '1px solid #d4af37', alignItems: 'center' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <img src={fotoCartomante} style={styles.avatar} alt="Anastasia" />
-          <div style={{ fontWeight: 'bold' }}>Anastasia</div>
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
+            <div style={{ fontWeight: 'bold' }}>Anastasia</div>
+            <a href={tiktokUrl} target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '5px', marginTop: '2px' }}>
+                <img src={tiktokLogo} style={{ width: '18px', height: '18px' }} alt="TikTok" />
+                <span style={{ fontSize: '10px', color: '#fff', opacity: 0.8 }}>Seguimi su TikTok</span>
+            </a>
+          </div>
         </div>
         <button onClick={logout} style={{ background: 'none', border: 'none', color: '#d4af37', fontSize: '24px' }}>✕</button>
       </div>
