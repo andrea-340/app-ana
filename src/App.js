@@ -60,7 +60,7 @@ function App() {
         <p className="text-sm text-gray-200 leading-relaxed">
           ✨{" "}
           <span className="text-purple-300 font-bold uppercase tracking-widest">
-            Garanzia di Veridicità:
+            Guida:
           </span>{" "}
           <br />
           Ogni consulto è <b>unico e reale</b>. Riceverai un video
