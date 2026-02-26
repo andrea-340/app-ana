@@ -11,7 +11,7 @@ const CONFIG = {
 const Piani = [
   {
     nome: "Sussurro Arcano",
-    prezzo: "5€",
+    prezzo: "10€",
     desc: "Lettura base su ciò che vuoi, svolta tramite video personalizzato.",
   },
   {
