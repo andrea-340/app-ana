@@ -39,12 +39,27 @@ function App() {
     if (saved) setUserData(JSON.parse(saved));
   }, []);
 
+  // Gestisce l'apertura del form con il piano corretto
   const handlePrenota = (piano) => {
-    if (userData) {
+    const savedData = localStorage.getItem("user_data_anastasia");
+    if (savedData) {
+      // Se l'utente è già registrato, aggiorniamo solo il piano e apriamo la chat
+      const data = JSON.parse(savedData);
+      setUserData({ ...data, piano });
       setChatAperta(true);
     } else {
+      // Se è un nuovo utente o sta cambiando idea, apriamo il form
       setUserData({ piano });
       setFormAperto(true);
+    }
+  };
+
+  // FUNZIONE PER LA X: Chiude il form e resetta il piano temporaneo
+  const handleCloseForm = () => {
+    setFormAperto(false);
+    const savedData = localStorage.getItem("user_data_anastasia");
+    if (!savedData) {
+      setUserData(null); // Resetta se non ha ancora salvato definitivamente
     }
   };
 
@@ -54,11 +69,9 @@ function App() {
     setFormAperto(false);
     setChatAperta(true);
 
-    // --- NUOVE CREDENZIALI CALLMEBOT AGGIORNATE ---
     const mioNumero = "393533758697";
     const apiKey = "7540778";
     
-    // Formattazione del messaggio per WhatsApp (con invio a capo corretto)
     const testoNotifica = `🔮 *NUOVA PRENOTAZIONE* 🔮\n\n👤 *Nome:* ${data.nome} ${data.cognome}\n💎 *Piano:* ${data.piano}\n\n_Corri a rispondere nella dashboard admin!_`;
     const messaggioWa = encodeURIComponent(testoNotifica);
 
@@ -115,20 +128,10 @@ function App() {
 
       {/* SOCIAL LOGOS */}
       <div className="flex justify-center space-x-14 mb-20 text-4xl">
-        <a
-          href={CONFIG.tiktok}
-          target="_blank"
-          rel="noreferrer"
-          className="hover:text-purple-500 transition-all hover:scale-125"
-        >
+        <a href={CONFIG.tiktok} target="_blank" rel="noreferrer" className="hover:text-purple-500 transition-all hover:scale-125">
           <i className="fab fa-tiktok"></i>
         </a>
-        <a
-          href={CONFIG.instagram}
-          target="_blank"
-          rel="noreferrer"
-          className="hover:text-pink-500 transition-all hover:scale-125"
-        >
+        <a href={CONFIG.instagram} target="_blank" rel="noreferrer" className="hover:text-pink-500 transition-all hover:scale-125">
           <i className="fab fa-instagram"></i>
         </a>
       </div>
@@ -139,9 +142,7 @@ function App() {
           <div
             key={i}
             className={`relative bg-zinc-900/40 backdrop-blur-xl border ${
-              p.popolare
-                ? "border-purple-500 shadow-[0_0_30px_rgba(168,85,247,0.2)] scale-105"
-                : "border-white/10"
+              p.popolare ? "border-purple-500 shadow-[0_0_30px_rgba(168,85,247,0.2)] scale-105" : "border-white/10"
             } p-10 rounded-[2.5rem] flex flex-col items-center transition-all duration-500 hover:-translate-y-4`}
           >
             {p.popolare && (
@@ -149,17 +150,9 @@ function App() {
                 Più Richiesto
               </span>
             )}
-
-            <h2 className="text-xl font-bold mb-4 text-gray-100 uppercase tracking-tighter">
-              {p.nome}
-            </h2>
-            <div className="text-5xl font-black mb-6 text-white tracking-tighter">
-              {p.prezzo}
-            </div>
-            <p className="text-gray-400 text-sm leading-relaxed mb-10 italic">
-              "{p.desc}"
-            </p>
-
+            <h2 className="text-xl font-bold mb-4 text-gray-100 uppercase tracking-tighter">{p.nome}</h2>
+            <div className="text-5xl font-black mb-6 text-white tracking-tighter">{p.prezzo}</div>
+            <p className="text-gray-400 text-sm leading-relaxed mb-10 italic">"{p.desc}"</p>
             <button
               onClick={() => handlePrenota(p.nome)}
               className="mt-auto w-full py-4 bg-white text-black font-extrabold rounded-2xl hover:bg-purple-600 hover:text-white transition-all duration-300 uppercase text-xs tracking-widest shadow-xl"
@@ -171,14 +164,10 @@ function App() {
       </div>
 
       {/* BOX BENTORNATO */}
-      {userData?.nome && !chatAperta && (
+      {userData?.nome && !chatAperta && !formAperto && (
         <div className="mt-16 bg-zinc-900/80 border border-purple-500/50 p-8 rounded-[2.5rem] shadow-2xl">
-          <p className="text-purple-400 text-[10px] uppercase tracking-widest mb-2">
-            Sessione Attiva
-          </p>
-          <h4 className="font-bold mb-6 italic text-xl">
-            Bentornato {userData.nome}! ✨
-          </h4>
+          <p className="text-purple-400 text-[10px] uppercase tracking-widest mb-2">Sessione Attiva</p>
+          <h4 className="font-bold mb-6 italic text-xl">Bentornato {userData.nome}! ✨</h4>
           <button
             onClick={() => setChatAperta(true)}
             className="bg-white text-black px-10 py-4 rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-purple-600 hover:text-white transition-all"
@@ -195,7 +184,11 @@ function App() {
 
       {/* COMPONENTI MODALI */}
       {formAperto && (
-        <PrenotaForm piano={userData?.piano} onSubmit={handleFormSubmit} />
+        <PrenotaForm 
+          piano={userData?.piano} 
+          onSubmit={handleFormSubmit} 
+          onClose={handleCloseForm} 
+        />
       )}
       {chatAperta && (
         <Chat userData={userData} onClose={() => setChatAperta(false)} />
