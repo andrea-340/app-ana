@@ -54,15 +54,18 @@ function App() {
     setFormAperto(false);
     setChatAperta(true);
 
-    // NOTIFICA WHATSAPP NUOVA PRENOTAZIONE
-    const mioNumero = "393425015092";
-    const apiKey = "1389414";
-    const messaggioWa = `🔮 *NUOVA PRENOTAZIONE* 🔮%0A%0A👤 *Nome:* ${data.nome} ${data.cognome}%0A💎 *Piano:* ${data.piano}%0A%0A_Corri a rispondere nella dashboard admin!_`;
+    // --- NUOVE CREDENZIALI CALLMEBOT AGGIORNATE ---
+    const mioNumero = "393533758697";
+    const apiKey = "7540778";
+    
+    // Formattazione del messaggio per WhatsApp (con invio a capo corretto)
+    const testoNotifica = `🔮 *NUOVA PRENOTAZIONE* 🔮\n\n👤 *Nome:* ${data.nome} ${data.cognome}\n💎 *Piano:* ${data.piano}\n\n_Corri a rispondere nella dashboard admin!_`;
+    const messaggioWa = encodeURIComponent(testoNotifica);
 
     fetch(
       `https://api.callmebot.com/whatsapp.php?phone=${mioNumero}&text=${messaggioWa}&apikey=${apiKey}`,
-      { mode: "no-cors" },
-    );
+      { mode: "no-cors" }
+    ).catch(err => console.error("Errore invio notifica WA:", err));
   };
 
   return (
@@ -86,7 +89,7 @@ function App() {
         {CONFIG.sottotitolo}
       </p>
 
-      {/* BOX ISTRUZIONI (Dal vecchio codice) */}
+      {/* BOX ISTRUZIONI */}
       <div className="bg-white/5 border border-white/10 backdrop-blur-sm rounded-3xl p-6 mb-12 max-w-lg shadow-xl mx-auto text-left">
         <p className="text-sm text-gray-200 leading-relaxed">
           ✨{" "}
@@ -130,7 +133,7 @@ function App() {
         </a>
       </div>
 
-      {/* GRIGLIA PIANI (Con descrizioni complete) */}
+      {/* GRIGLIA PIANI */}
       <div className="w-full max-w-5xl grid grid-cols-1 md:grid-cols-3 gap-8 mx-auto">
         {Piani.map((p, i) => (
           <div
@@ -167,14 +170,14 @@ function App() {
         ))}
       </div>
 
-      {/* BOX BENTORNATO (Persistenza) */}
+      {/* BOX BENTORNATO */}
       {userData?.nome && !chatAperta && (
-        <div className="mt-16 bg-zinc-900/80 border border-purple-500/50 p-8 rounded-[2.5rem] shadow-2xl animate-bounce-subtle">
+        <div className="mt-16 bg-zinc-900/80 border border-purple-500/50 p-8 rounded-[2.5rem] shadow-2xl">
           <p className="text-purple-400 text-[10px] uppercase tracking-widest mb-2">
             Sessione Attiva
           </p>
           <h4 className="font-bold mb-6 italic text-xl">
-            Bentornata {userData.nome}! ✨
+            Bentornato {userData.nome}! ✨
           </h4>
           <button
             onClick={() => setChatAperta(true)}
