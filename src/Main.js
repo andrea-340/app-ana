@@ -1,15 +1,11 @@
 import React from "react";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import App from "./App";
-import AdminPage from "./AdminPage";
+import ReactDOM from "react-dom/client";
+import Main from "./Main";
+import "./index.css"; // Assicurati che questo file esista, o rimuovi la riga
 
-export default function Main() {
-  return (
-    <Router>
-      <Routes>
-        <Route path="/" element={<App />} />
-        <Route path="/admin" element={<AdminPage />} />
-      </Routes>
-    </Router>
-  );
-}
+const root = ReactDOM.createRoot(document.getElementById("root"));
+root.render(
+  <React.StrictMode>
+    <Main />
+  </React.StrictMode>
+);
