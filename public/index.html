@@ -7,13 +7,12 @@
     
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black">
-    <link rel="apple-touch-icon" href="/logo192.png">
+    <link rel="apple-touch-icon" href="/logo.ico">
 
     <script>
-      // 1. SCELTA DEL MANIFEST (Admin vs Utente)
+      // Scelta del Manifest (Admin vs Utente)
       const manifestLink = document.createElement('link');
       manifestLink.rel = 'manifest';
-      // Se l'URL contiene /admin carica il manifest-admin, altrimenti quello base
       manifestLink.href = window.location.pathname.includes('admin') ? '/manifest-admin.json' : '/manifest.json';
       document.head.appendChild(manifestLink);
     </script>
@@ -29,40 +28,40 @@
           serviceWorkerPath: "OneSignalSDKWorker.js",
           allowLocalhostAsSecureOrigin: true,
           persistNotification: true,
-          
-          // NASCONDE LA CAMPANELLA VIOLA
           notifyButton: { enable: false },
-          
-          // POPUP AUTOMATICO (SLIDEDOWN) - Unico modo per iPhone
+          // Popup che appare dopo 1 secondo per catturare l'utente subito
           promptOptions: {
             slidedown: {
               enabled: true,
               autoPrompt: true,
-              timeDelay: 3,
-              actionMessage: "Vuoi ricevere notifiche per i nuovi messaggi?",
+              timeDelay: 1,
+              actionMessage: "Ricevi una notifica quando Anastasia ti risponde.",
               acceptButtonText: "SÌ",
               cancelButtonText: "NO"
             }
           }
         });
-
-        // Backup: Chiede il permesso al primo tocco sullo schermo (necessario per iOS)
-        document.addEventListener('click', () => {
-          OneSignal.Notifications.requestPermission();
-        }, { once: true });
       });
+
+      // FUNZIONE "NUOVA CHAT" ANTI-BLOCCO TIKTOK
+      // Questa funzione pulisce tutto e forza il browser di TikTok a rigenerare la sessione
+      window.forceNewChat = function() {
+        localStorage.clear();
+        sessionStorage.clear();
+        // Aggiungiamo un numero casuale all'URL per "fregare" il browser di TikTok
+        const newUrl = window.location.origin + window.location.pathname + "?v=" + Math.random();
+        window.location.replace(newUrl);
+      };
     </script>
 </head>
 <body class="bg-black text-white">
 
     <script>
-      const isTikTok = /TikTok/i.test(navigator.userAgent) || /FBAN|FBAV/i.test(navigator.userAgent);
-      if (isTikTok) {
+      if (/TikTok/i.test(navigator.userAgent)) {
         document.write(`
-          <div style="position:fixed; top:0; left:0; width:100%; background:#9333ea; color:white; text-align:center; padding:12px; z-index:99999; font-size:13px; font-weight:bold; border-bottom: 2px solid white;">
-            ⚠️ TikTok blocca le notifiche. Clicca i 3 puntini (⋯) in alto a destra e seleziona "Apri in Safari" per attivare la chat correttamente.
+          <div id="tk-fix" style="position:fixed; top:0; left:0; width:100%; background:#222; color:#aaa; text-align:center; padding:5px; z-index:9999; font-size:10px;">
+            Ottimizzato per TikTok • Per le notifiche audio usa Safari
           </div>
-          <div style="height:50px;"></div>
         `);
       }
     </script>
