@@ -7,10 +7,10 @@
     
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black">
-    <link rel="apple-touch-icon" href="/logo.ico">
+    <link rel="apple-touch-icon" href="/logo192.png">
 
     <script>
-      // Se l'URL contiene "admin", carica il manifest admin, altrimenti quello base
+      // Sceglie il manifest in base all'indirizzo (Admin o Utente)
       const manifestLink = document.createElement('link');
       manifestLink.rel = 'manifest';
       manifestLink.href = window.location.pathname.includes('admin') ? '/manifest-admin.json' : '/manifest.json';
@@ -28,17 +28,32 @@
           serviceWorkerPath: "OneSignalSDKWorker.js",
           allowLocalhostAsSecureOrigin: true,
           persistNotification: true,
-          // Questo serve per far vibrare l'iPhone in background
-          notificationServiceExtension: "OneSignalNotificationServiceExtension" 
+          // DISATTIVA LA CAMPANELLA VIOLA
+          notifyButton: {
+            enable: false 
+          },
+          // ATTIVA IL BANNER DI CONSENSO (SLIDEDOWN) - Obbligatorio per iPhone
+          promptOptions: {
+            slidedown: {
+              enabled: true,
+              autoPrompt: true,
+              timeDelay: 2,
+              pageViews: 1,
+              actionMessage: "Vuoi ricevere notifiche per i nuovi messaggi?",
+              acceptButtonText: "ATTIVA",
+              cancelButtonText: "NON ORA"
+            }
+          }
         });
 
-        // Forza il popup al primo tocco sullo schermo
-        document.body.addEventListener('click', function() {
+        // Backup: se l'utente clicca un punto qualsiasi, riprova a chiedere il permesso
+        document.addEventListener('click', function() {
           OneSignal.Notifications.requestPermission();
         }, { once: true });
       });
     </script>
 </head>
-<body class="bg-black text-white">    
+<body class="bg-black text-white">
+    <div id="root"></div>
 </body>
 </html>
