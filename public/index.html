@@ -6,6 +6,7 @@
     <title>Anastasia la cartomante</title>
     
     <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="icon" href="/logo.ico" />
     <link rel="apple-touch-icon" href="/logo.ico" />
 
@@ -14,23 +15,56 @@
     
     <style>
       @import url("https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;700&display=swap");
-      body { font-family: "Poppins", sans-serif; -webkit-tap-highlight-color: transparent; }
-      .magic-bg { background: radial-gradient(circle at top center, #2d1b4e 0%, #000000 90%); min-height: 100vh; }
+      body { 
+        font-family: "Poppins", sans-serif; 
+        -webkit-tap-highlight-color: transparent; 
+      }
+      .magic-bg { 
+        background: radial-gradient(circle at top center, #2d1b4e 0%, #000000 90%); 
+        min-height: 100vh; 
+      }
+      /* Custom scrollbar per la chat */
+      .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+      .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+      .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(147, 51, 234, 0.3); border-radius: 10px; }
     </style>
 
-    <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignal.js" async=""></script>
+    <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
     <script>
       window.OneSignalDeferred = window.OneSignalDeferred || [];
       OneSignalDeferred.push(async function (OneSignal) {
         await OneSignal.init({
-          appId: "METTI_QUI_IL_TUO_CODICE_REALE", 
+          appId: "c5933b83-abe0-424b-9433-af3db6372d34",
+          allowLocalhostAsSecureOrigin: true,
+          // Attiva il pulsante a campanellino (essenziale per iOS)
           notifyButton: {
             enable: true,
             size: 'medium',
             position: 'bottom-right',
-            colors: { 'circle.background': '#9333ea' } // Colore viola come il tuo sito
+            colors: { 'circle.background': '#9333ea' },
+            displayPredicate: function() {
+              return OneSignal.isPushNotificationsEnabled().then(function(isEnabled) {
+                return !isEnabled; // Scompare se l'utente è già iscritto
+              });
+            }
           },
-          allowLocalhostAsSecureOrigin: true,
+          // FORZA LA NOTIFICA DI CONSENSO (SLIDEDOWN)
+          promptOptions: {
+            slidedown: {
+              enabled: true,
+              autoPrompt: true, // Appare da solo
+              timeDelay: 3,     // Dopo 3 secondi dall'apertura
+              pageViews: 1,     // Già alla prima visita
+              actionMessage: "Vuoi ricevere le notifiche per i nuovi messaggi da Anastasia?",
+              acceptButtonText: "SÌ, ATTIVA",
+              cancelButtonText: "NON ORA"
+            }
+          }
+        });
+
+        // Debug: Verifica se l'utente si iscrive con successo
+        OneSignal.Notifications.addEventListener("permissionChange", (permission) => {
+          console.log("Nuovo stato permessi:", permission);
         });
       });
     </script>
