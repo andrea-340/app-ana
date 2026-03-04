@@ -3,62 +3,41 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0" />
-    <title>Anastasia la cartomante</title>
+    <title>Anastasia</title>
     
     <link rel="manifest" href="/manifest.json">
-    <meta name="theme-color" content="#9333ea">
-
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="Anastasia">
-    <link rel="apple-touch-icon" href="/logo.ico">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <link rel="apple-touch-icon" href="/logo192.png">
 
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
     
-    <style>
-      @import url("https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;700&display=swap");
-      body { font-family: "Poppins", sans-serif; -webkit-tap-highlight-color: transparent; background-color: #000; }
-      .magic-bg { background: radial-gradient(circle at top center, #2d1b4e 0%, #000000 90%); min-height: 100vh; }
-    </style>
-
     <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
     <script>
       window.OneSignalDeferred = window.OneSignalDeferred || [];
       OneSignalDeferred.push(async function (OneSignal) {
         await OneSignal.init({
           appId: "c5933b83-abe0-424b-9433-af3db6372d34",
-          allowLocalhostAsSecureOrigin: true,
-          
-          // FONDAMENTALE PER IL BACKGROUND SU IPHONE
-          serviceWorkerParam: { scope: "/" },
           serviceWorkerPath: "OneSignalSDKWorker.js",
-          persistNotification: true, 
-          
-          // Forza la registrazione immediata
-          autoResubscribe: true,
-          
-          notifyButton: { 
-            enable: true,
-            size: 'medium',
-            position: 'bottom-right',
-            colors: { 'circle.background': '#9333ea' }
-          },
+          allowLocalhostAsSecureOrigin: true,
+          // Forza iPhone a mostrare il popup
           promptOptions: {
             slidedown: {
               enabled: true,
               autoPrompt: true,
-              timeDelay: 2
+              timeDelay: 1
             }
           }
         });
-
-        // Questo comando "sveglia" il permesso ogni volta che l'utente entra
-        await OneSignal.Notifications.requestPermission();
+        
+        // Forza l'iscrizione appena clicca ovunque
+        document.addEventListener('click', () => {
+             OneSignal.Notifications.requestPermission();
+        }, { once: true });
       });
     </script>
   </head>
-  <body>
+  <body class="bg-black text-white">
     <div id="root"></div>
   </body>
 </html>
