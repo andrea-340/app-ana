@@ -8,15 +8,26 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Anastasia">
-    <link rel="apple-touch-icon" href="/logo.ico">
+    <link rel="icon" href="/logo.ico" />
+    <link rel="apple-touch-icon" href="/logo.ico" />
 
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
     
     <style>
       @import url("https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;700&display=swap");
-      body { font-family: "Poppins", sans-serif; -webkit-tap-highlight-color: transparent; }
-      .magic-bg { background: radial-gradient(circle at top center, #2d1b4e 0%, #000000 90%); min-height: 100vh; }
+      body { 
+        font-family: "Poppins", sans-serif; 
+        -webkit-tap-highlight-color: transparent; 
+        background-color: black;
+      }
+      .magic-bg { 
+        background: radial-gradient(circle at top center, #2d1b4e 0%, #000000 90%); 
+        min-height: 100vh; 
+      }
+      /* Scrollbar viola sottile */
+      .custom-scrollbar::-webkit-scrollbar { width: 3px; }
+      .custom-scrollbar::-webkit-scrollbar-thumb { background: #9333ea; border-radius: 10px; }
     </style>
 
     <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
@@ -26,21 +37,29 @@
         await OneSignal.init({
           appId: "c5933b83-abe0-424b-9433-af3db6372d34",
           allowLocalhostAsSecureOrigin: true,
-          autoResubscribe: true, // Tenta di ri-iscriverti se il tracciamento viene pulito
+          
+          // Configurazione specifica per evitare blocchi iPhone
+          persistNotification: true, 
+          serviceWorkerPath: "OneSignalSDKWorker.js",
+          
+          // Il campanellino viola (indispensabile su iOS)
           notifyButton: {
             enable: true,
             size: 'medium',
             position: 'bottom-right',
-            colors: { 'circle.background': '#9333ea' }
+            colors: { 'circle.background': '#9333ea' },
+            text: { 'tip.state.unsubscribed': 'Attiva notifiche' }
           },
+
+          // Il banner che scende dall'alto (Prompt)
           promptOptions: {
             slidedown: {
               enabled: true,
               autoPrompt: true,
-              timeDelay: 2,
+              timeDelay: 3,
               pageViews: 1,
-              actionMessage: "Attiva le notifiche per non perdere i messaggi dei clienti.",
-              acceptButtonText: "ATTIVA ORA",
+              actionMessage: "Ricevi una notifica quando Anastasia ti risponde.",
+              acceptButtonText: "ATTIVA",
               cancelButtonText: "NON ORA"
             }
           }
@@ -48,6 +67,7 @@
       });
     </script>
   </head>
+
   <body>
     <div id="root"></div>
   </body>
