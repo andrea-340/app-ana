@@ -10,7 +10,7 @@
     <link rel="apple-touch-icon" href="/logo192.png">
 
     <script>
-      // Sceglie il manifest in base all'indirizzo (Admin o Utente)
+      // Scelta del Manifest (Admin o Utente) in base all'URL
       const manifestLink = document.createElement('link');
       manifestLink.rel = 'manifest';
       manifestLink.href = window.location.pathname.includes('admin') ? '/manifest-admin.json' : '/manifest.json';
@@ -28,25 +28,29 @@
           serviceWorkerPath: "OneSignalSDKWorker.js",
           allowLocalhostAsSecureOrigin: true,
           persistNotification: true,
-          // DISATTIVA LA CAMPANELLA VIOLA
+          
+          // 1. ELIMINA LA CAMPANELLA VIOLA
           notifyButton: {
             enable: false 
           },
-          // ATTIVA IL BANNER DI CONSENSO (SLIDEDOWN) - Obbligatorio per iPhone
+          
+          // 2. CONFIGURA IL POPUP AUTOMATICO (SLIDEDOWN)
+          // Appare da solo senza tasti, così l'utente deve solo cliccare "Sì"
           promptOptions: {
             slidedown: {
               enabled: true,
-              autoPrompt: true,
-              timeDelay: 2,
+              autoPrompt: true, // Appare da solo all'ingresso
+              timeDelay: 2,     // Dopo 2 secondi
               pageViews: 1,
               actionMessage: "Vuoi ricevere notifiche per i nuovi messaggi?",
-              acceptButtonText: "ATTIVA",
-              cancelButtonText: "NON ORA"
+              acceptButtonText: "SÌ",
+              cancelButtonText: "NO"
             }
           }
         });
 
-        // Backup: se l'utente clicca un punto qualsiasi, riprova a chiedere il permesso
+        // 3. Backup invisibile: chiede il permesso al primo tocco sullo schermo
+        // (Necessario se l'iPhone blocca l'auto-prompt)
         document.addEventListener('click', function() {
           OneSignal.Notifications.requestPermission();
         }, { once: true });
