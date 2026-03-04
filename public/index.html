@@ -10,9 +10,10 @@
     <link rel="apple-touch-icon" href="/logo192.png">
 
     <script>
-      // Scelta del Manifest (Admin o Utente) in base all'URL
+      // 1. SCELTA DEL MANIFEST (Admin vs Utente)
       const manifestLink = document.createElement('link');
       manifestLink.rel = 'manifest';
+      // Se l'URL contiene /admin carica il manifest-admin, altrimenti quello base
       manifestLink.href = window.location.pathname.includes('admin') ? '/manifest-admin.json' : '/manifest.json';
       document.head.appendChild(manifestLink);
     </script>
@@ -29,19 +30,15 @@
           allowLocalhostAsSecureOrigin: true,
           persistNotification: true,
           
-          // 1. ELIMINA LA CAMPANELLA VIOLA
-          notifyButton: {
-            enable: false 
-          },
+          // NASCONDE LA CAMPANELLA VIOLA
+          notifyButton: { enable: false },
           
-          // 2. CONFIGURA IL POPUP AUTOMATICO (SLIDEDOWN)
-          // Appare da solo senza tasti, così l'utente deve solo cliccare "Sì"
+          // POPUP AUTOMATICO (SLIDEDOWN) - Unico modo per iPhone
           promptOptions: {
             slidedown: {
               enabled: true,
-              autoPrompt: true, // Appare da solo all'ingresso
-              timeDelay: 2,     // Dopo 2 secondi
-              pageViews: 1,
+              autoPrompt: true,
+              timeDelay: 3,
               actionMessage: "Vuoi ricevere notifiche per i nuovi messaggi?",
               acceptButtonText: "SÌ",
               cancelButtonText: "NO"
@@ -49,15 +46,28 @@
           }
         });
 
-        // 3. Backup invisibile: chiede il permesso al primo tocco sullo schermo
-        // (Necessario se l'iPhone blocca l'auto-prompt)
-        document.addEventListener('click', function() {
+        // Backup: Chiede il permesso al primo tocco sullo schermo (necessario per iOS)
+        document.addEventListener('click', () => {
           OneSignal.Notifications.requestPermission();
         }, { once: true });
       });
     </script>
 </head>
 <body class="bg-black text-white">
+
+    <script>
+      const isTikTok = /TikTok/i.test(navigator.userAgent) || /FBAN|FBAV/i.test(navigator.userAgent);
+      if (isTikTok) {
+        document.write(`
+          <div style="position:fixed; top:0; left:0; width:100%; background:#9333ea; color:white; text-align:center; padding:12px; z-index:99999; font-size:13px; font-weight:bold; border-bottom: 2px solid white;">
+            ⚠️ TikTok blocca le notifiche. Clicca i 3 puntini (⋯) in alto a destra e seleziona "Apri in Safari" per attivare la chat correttamente.
+          </div>
+          <div style="height:50px;"></div>
+        `);
+      }
+    </script>
+
     <div id="root"></div>
+
 </body>
 </html>
