@@ -7,26 +7,16 @@
     
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <link rel="icon" href="/logo.ico" />
-    <link rel="apple-touch-icon" href="/logo.ico" />
+    <meta name="apple-mobile-web-app-title" content="Anastasia">
+    <link rel="apple-touch-icon" href="/logo.ico">
 
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
     
     <style>
       @import url("https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;700&display=swap");
-      body { 
-        font-family: "Poppins", sans-serif; 
-        -webkit-tap-highlight-color: transparent; 
-      }
-      .magic-bg { 
-        background: radial-gradient(circle at top center, #2d1b4e 0%, #000000 90%); 
-        min-height: 100vh; 
-      }
-      /* Custom scrollbar per la chat */
-      .custom-scrollbar::-webkit-scrollbar { width: 4px; }
-      .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-      .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(147, 51, 234, 0.3); border-radius: 10px; }
+      body { font-family: "Poppins", sans-serif; -webkit-tap-highlight-color: transparent; }
+      .magic-bg { background: radial-gradient(circle at top center, #2d1b4e 0%, #000000 90%); min-height: 100vh; }
     </style>
 
     <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
@@ -36,40 +26,28 @@
         await OneSignal.init({
           appId: "c5933b83-abe0-424b-9433-af3db6372d34",
           allowLocalhostAsSecureOrigin: true,
-          // Attiva il pulsante a campanellino (essenziale per iOS)
+          autoResubscribe: true, // Tenta di ri-iscriverti se il tracciamento viene pulito
           notifyButton: {
             enable: true,
             size: 'medium',
             position: 'bottom-right',
-            colors: { 'circle.background': '#9333ea' },
-            displayPredicate: function() {
-              return OneSignal.isPushNotificationsEnabled().then(function(isEnabled) {
-                return !isEnabled; // Scompare se l'utente è già iscritto
-              });
-            }
+            colors: { 'circle.background': '#9333ea' }
           },
-          // FORZA LA NOTIFICA DI CONSENSO (SLIDEDOWN)
           promptOptions: {
             slidedown: {
               enabled: true,
-              autoPrompt: true, // Appare da solo
-              timeDelay: 3,     // Dopo 3 secondi dall'apertura
-              pageViews: 1,     // Già alla prima visita
-              actionMessage: "Vuoi ricevere le notifiche per i nuovi messaggi da Anastasia?",
-              acceptButtonText: "SÌ, ATTIVA",
+              autoPrompt: true,
+              timeDelay: 2,
+              pageViews: 1,
+              actionMessage: "Attiva le notifiche per non perdere i messaggi dei clienti.",
+              acceptButtonText: "ATTIVA ORA",
               cancelButtonText: "NON ORA"
             }
           }
         });
-
-        // Debug: Verifica se l'utente si iscrive con successo
-        OneSignal.Notifications.addEventListener("permissionChange", (permission) => {
-          console.log("Nuovo stato permessi:", permission);
-        });
       });
     </script>
   </head>
-
   <body>
     <div id="root"></div>
   </body>
