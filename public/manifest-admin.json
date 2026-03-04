@@ -1,0 +1,11 @@
+{
+  "short_name": "Admin",
+  "name": "Anastasia Admin",
+  "icons": [
+    { "src": "logo192.png", "type": "image/png", "sizes": "192x192" }
+  ],
+  "start_url": "/admin",
+  "display": "standalone",
+  "theme_color": "#9333ea",
+  "background_color": "#000000"
+}
