@@ -5,12 +5,11 @@ export default function Chat({ userData, onClose }) {
   const [messaggio, setMessaggio] = useState("");
   const [messaggi, setMessaggi] = useState([]);
 
-  // Configurazione CallMeBot (I tuoi dati)
+  // Configurazione CallMeBot
   const MIO_NUMERO = "393277507177";
   const API_KEY = "1389414";
-  const ADMIN_URL = "https://tuosito.com/admin";
 
-  // ID della chat: lo recupera o lo crea nuovo
+  // ID della chat: recupera o crea
   const [chatId] = useState(() => {
     const savedId = localStorage.getItem("chat_id_anastasia");
     if (savedId) return savedId;
@@ -21,7 +20,12 @@ export default function Chat({ userData, onClose }) {
 
   const scrollRef = useRef();
 
-  // Funzione per inviare la notifica WhatsApp all'Admin
+  // Funzione per formattare l'orario (HH:mm)
+  const formattaOra = (dateString) => {
+    const d = dateString ? new Date(dateString) : new Date();
+    return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  };
+
   const inviaNotificaWhatsApp = (testo) => {
     const testoFormattato = encodeURIComponent(testo);
     fetch(
@@ -30,7 +34,7 @@ export default function Chat({ userData, onClose }) {
     );
   };
 
-  // FUNZIONE PER RESETTARE LA CHAT (La "X" definitiva)
+  // Funzione per resettare la chat (Ripristinata)
   const resettaChat = () => {
     const conferma = window.confirm(
       "Vuoi eliminare questa chat e iniziarne una nuova? Perderai la cronologia attuale.",
@@ -38,7 +42,7 @@ export default function Chat({ userData, onClose }) {
     if (conferma) {
       localStorage.removeItem("chat_id_anastasia");
       localStorage.removeItem("user_data_anastasia");
-      window.location.reload(); // Ricarica la pagina per resettare tutto il sito
+      window.location.reload();
     }
   };
 
@@ -54,22 +58,34 @@ export default function Chat({ userData, onClose }) {
       if (data && data.length > 0) {
         setMessaggi(data);
       } else {
-        // Se è la prima volta, salva i dati completi nel primo messaggio
+        // PRIMA VOLTA: Invio messaggio utente
         const testoPiano = `Ciao Anastasia, ho scelto il piano "${userData.piano}"`;
-        const primoM = {
-          chat_id: chatId,
-          testo: testoPiano,
-          ruolo: "utente",
-          nome: userData.nome,
-          cognome: userData.cognome,
-          telefono: userData.telefono, // Salvataggio colonna telefono
-          piano: userData.piano, // Salvataggio colonna piano
-        };
+        const { error: errorUtente } = await supabase.from("chat").insert([
+          {
+            chat_id: chatId,
+            testo: testoPiano,
+            ruolo: "utente",
+            nome: userData.nome,
+            cognome: userData.cognome,
+            telefono: userData.telefono,
+            piano: userData.piano,
+          },
+        ]);
 
-        const { error } = await supabase.from("chat").insert([primoM]);
+        if (!errorUtente) {
+          // MESSAGGIO AUTOMATICO DI ANASTASIA (Unico invio)
+          await supabase.from("chat").insert([
+            {
+              chat_id: chatId,
+              testo: `Grazie per avermi scelto! ❤️ Ho visto che hai scelto il piano ${userData.piano.toUpperCase()}. Ciao tesoro sono Anastasia ti lascio il mio numero scrivimi su whatsapp a breve ti risponderò per darti maggiori info: 3533758697`,
+              ruolo: "admin",
+              nome: "Anastasia",
+              cognome: "Admin",
+              telefono: userData.telefono,
+              piano: userData.piano,
+            },
+          ]);
 
-        if (!error) {
-          setMessaggi([primoM]);
           inviaNotificaWhatsApp(
             `🔮 *NUOVO CLIENTE!*\n👤 *${userData.nome} ${userData.cognome}*\n📱 *Tel:* ${userData.telefono}\n💎 *Piano:* ${userData.piano}`,
           );
@@ -79,7 +95,7 @@ export default function Chat({ userData, onClose }) {
 
     caricaEInizia();
 
-    // 2. Sottoscrizione Realtime per ricevere le risposte di Anastasia
+    // 2. Realtime per ricevere i messaggi
     const channel = supabase
       .channel(`chat-${chatId}`)
       .on(
@@ -112,29 +128,27 @@ export default function Chat({ userData, onClose }) {
     const testoInvio = messaggio;
     setMessaggio("");
 
-    const { error } = await supabase.from("chat").insert([
+    await supabase.from("chat").insert([
       {
         chat_id: chatId,
         testo: testoInvio,
         ruolo: "utente",
         nome: userData.nome,
         cognome: userData.cognome,
-        telefono: userData.telefono, // Assicura che l'admin veda sempre i dati
-        piano: userData.piano, // Assicura che l'admin veda sempre i dati
+        telefono: userData.telefono,
+        piano: userData.piano,
       },
     ]);
 
-    if (!error) {
-      inviaNotificaWhatsApp(
-        `💬 *MESSAGGIO DA ${userData.nome.toUpperCase()}*:\n"${testoInvio}"`,
-      );
-    }
+    inviaNotificaWhatsApp(
+      `💬 *MESSAGGIO DA ${userData.nome.toUpperCase()}*:\n"${testoInvio}"`,
+    );
   };
 
   return (
     <div className="fixed inset-0 bg-black/95 flex items-center justify-center z-50 p-4 backdrop-blur-md">
       <div className="bg-zinc-950 border border-white/10 p-6 rounded-[2.5rem] w-full max-w-md h-[85vh] flex flex-col shadow-[0_0_50px_rgba(0,0,0,0.5)]">
-        {/* HEADER CHAT */}
+        {/* HEADER CHAT - Con tasto Nuova Chat ripristinato */}
         <div className="flex justify-between items-center mb-6 border-b border-white/5 pb-4">
           <div className="flex items-center gap-3">
             <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
@@ -149,7 +163,6 @@ export default function Chat({ userData, onClose }) {
           </div>
 
           <div className="flex items-center gap-4">
-            {/* TASTO PER ELIMINARE E RICOMINCIARE */}
             <button
               onClick={resettaChat}
               title="Elimina chat e ricomincia"
@@ -175,17 +188,18 @@ export default function Chat({ userData, onClose }) {
               className={`flex flex-col ${m.ruolo === "utente" ? "items-end" : "items-start"}`}
             >
               <div
-                className={`p-4 rounded-2xl max-w-[85%] text-sm ${
-                  m.ruolo === "utente"
-                    ? "bg-purple-600 text-white rounded-tr-none shadow-lg shadow-purple-900/20"
-                    : "bg-zinc-900 text-gray-200 rounded-tl-none border border-white/10"
-                }`}
+                className={`p-4 rounded-2xl max-w-[85%] text-sm ${m.ruolo === "utente" ? "bg-purple-600 text-white rounded-tr-none shadow-lg shadow-purple-900/20" : "bg-zinc-900 text-gray-200 rounded-tl-none border border-white/10"}`}
               >
                 {m.testo}
               </div>
-              <span className="text-[8px] text-zinc-600 mt-1.5 px-2 uppercase tracking-widest font-bold">
-                {m.ruolo === "admin" ? "Anastasia" : m.nome}
-              </span>
+              <div className="flex items-center gap-2 mt-1 px-2">
+                <span className="text-[8px] text-zinc-600 uppercase tracking-widest font-bold">
+                  {m.ruolo === "admin" ? "Anastasia" : m.nome}
+                </span>
+                <span className="text-[8px] text-zinc-400 font-medium">
+                  {formattaOra(m.created_at)}
+                </span>
+              </div>
             </div>
           ))}
           <div ref={scrollRef}></div>
