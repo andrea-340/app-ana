@@ -13,6 +13,12 @@ export default function AdminChat() {
   const [notifiche, setNotifiche] = useState({});
   const scrollRef = useRef();
 
+  // Funzione per formattare l'orario (HH:mm)
+  const formattaOra = (dateString) => {
+    const d = dateString ? new Date(dateString) : new Date();
+    return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  };
+
   // Recupera l'utente attualmente selezionato dai dati della lista
   const utenteSelezionato = chatUtenti.find(
     (u) => u.chat_id === chatIdSelezionata,
@@ -164,7 +170,7 @@ export default function AdminChat() {
       >
         {chatIdSelezionata ? (
           <>
-            {/* SCHEDA CLIENTE IN ALTO (NUOVA) */}
+            {/* SCHEDA CLIENTE IN ALTO */}
             <div className="p-4 border-b border-white/5 bg-zinc-950 flex items-center justify-between shadow-xl">
               <div className="flex items-center gap-4">
                 <button
@@ -208,13 +214,16 @@ export default function AdminChat() {
               {messaggi.map((m, i) => (
                 <div
                   key={i}
-                  className={`flex ${m.ruolo === "admin" ? "justify-end" : "justify-start"}`}
+                  className={`flex flex-col ${m.ruolo === "admin" ? "items-end" : "items-start"}`}
                 >
                   <div
                     className={`max-w-[85%] p-3 rounded-2xl text-sm ${m.ruolo === "admin" ? "bg-purple-600 text-white rounded-tr-none" : "bg-zinc-800 text-gray-200 rounded-tl-none border border-white/5"}`}
                   >
                     {m.testo}
                   </div>
+                  <span className="text-[8px] text-zinc-500 mt-1 px-2 font-bold uppercase tracking-widest">
+                    {formattaOra(m.created_at)}
+                  </span>
                 </div>
               ))}
               <div ref={scrollRef}></div>
@@ -231,7 +240,7 @@ export default function AdminChat() {
                 />
                 <button
                   onClick={invia}
-                  className="bg-purple-600 w-10 h-10 rounded-xl flex items-center justify-center"
+                  className="bg-purple-600 w-10 h-10 rounded-xl flex items-center justify-center transition-transform active:scale-90"
                 >
                   ➤
                 </button>
