@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="it">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0" />
+    <title>Anastasia</title>
+    
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <link rel="apple-touch-icon" href="/logo.ico">
+
+    <script>
+      // Scelta del Manifest (Admin vs Utente)
+      const manifestLink = document.createElement('link');
+      manifestLink.rel = 'manifest';
+      manifestLink.href = window.location.pathname.includes('admin') ? '/manifest-admin.json' : '/manifest.json';
+      document.head.appendChild(manifestLink);
+    </script>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+    <script>
+      window.OneSignalDeferred = window.OneSignalDeferred || [];
+      OneSignalDeferred.push(async function(OneSignal) {
+        try {
+          await OneSignal.init({
+            appId: "c5933b83-abe0-424b-9433-af3db6372d34",
+            serviceWorkerPath: "OneSignalSDKWorker.js",
+            allowLocalhostAsSecureOrigin: true,
+            persistNotification: true,
+            notifyButton: { 
+              enable: true,
+              position: 'bottom-right',
+              theme: 'default',
+              colors: {
+                'circle.background': '#9333ea',
+                'circle.foreground': 'white',
+                'badge.background': '#9333ea',
+                'badge.foreground': 'white',
+                'badge.bordercolor': 'white',
+                'pulse.color': 'white',
+                'dialog.button.background.hovering': '#7e22ce',
+                'dialog.button.background.active': '#7e22ce',
+                'dialog.button.background': '#9333ea',
+                'dialog.button.foreground': 'white',
+                'dialog.container.background': 'white',
+                'dialog.container.foreground': '#333'
+              },
+              text: {
+                'tip.state.unsubscribed': 'Iscriviti alle notifiche',
+                'tip.state.subscribed': "Sei iscritto alle notifiche",
+                'tip.state.blocked': "Hai bloccato le notifiche",
+                'message.prenotice': 'Clicca per ricevere notifiche quando Anastasia ti risponde',
+                'dialog.main.title': 'Gestisci Notifiche Chat',
+                'dialog.main.button.subscribe': 'ISCRIVITI',
+                'dialog.main.button.unsubscribe': 'DISISCRIVITI',
+                'dialog.blocked.title': 'Sblocca Notifiche',
+                'dialog.blocked.message': "Segui queste istruzioni per sbloccare le notifiche:"
+              }
+            },
+            promptOptions: {
+              slidedown: {
+                enabled: true,
+                autoPrompt: true,
+                timeDelay: 1,
+                actionMessage: "Ricevi una notifica istantanea quando Anastasia ti risponde in chat.",
+                acceptButtonText: "ATTIVA ORA",
+                cancelButtonText: "NON ORA"
+              }
+            }
+          });
+        } catch (e) {}
+      });
+    </script>
+</head>
+<body class="bg-black text-white">
+
+    <script>
+      if (/TikTok/i.test(navigator.userAgent)) {
+        document.write(`
+          <div id="tk-fix" style="position:fixed; top:0; left:0; width:100%; background:#222; color:#aaa; text-align:center; padding:5px; z-index:9999; font-size:10px;">
+            Ottimizzato per TikTok • Per le notifiche audio usa Safari
+          </div>
+        `);
+      }
+    </script>
+
+    <div id="root"></div>
+
+</body>
+</html>
